@@ -12,8 +12,8 @@ import HelloWorld from './components/HelloWorld.vue'
         <li><router-link to="/">Inicio</router-link></li>
         <li><router-link to="/horasxtrabajo">Inicio de cuatrimestre</router-link></li>
         <li><router-link to="/horasxactividad">Semanales</router-link></li>
-        <li><router-link to="/actividadesespe">Actividades especializadas</router-link></li>
-        <li><router-link to="/otrasacti">Otras actividades</router-link></li>
+        <li><router-link to="/actividadesespe">Especializadas</router-link></li>
+        <li><router-link to="/otrasacti">Otras</router-link></li>
         <li><router-link to="/reportefinal">Reporte final</router-link></li>
       </ul>
     </nav>

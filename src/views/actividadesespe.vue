@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <h2 class="title">Registro de actividades</h2>
+    <h2 class="title">Actividades especiales</h2>
     <form @submit.prevent="submitForm" class="form">
       <table class="table">
         <thead>
