@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import login from './views/login.vue';
 import Home from './views/Home.vue';
 import HorasXTrabajo from './views/HorasXTrabajo.vue';
 import HorasxActividad from './views/horasxactividad.vue';
