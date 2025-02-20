@@ -8,6 +8,7 @@ import otrasacti from './views/otrasacti.vue';
 import reportefinal from './views/reportefinal.vue';
 
 const routes = [
+    { path: '/login', component: login },
     { path: '/', component: Home },
     { path: '/horasxtrabajo', component: HorasXTrabajo },
     { path: '/horasxactividad', component: HorasxActividad},
