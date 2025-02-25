@@ -14,7 +14,7 @@
             headers: {
             'Content-Type': 'application/json',
             },
-            data
+            //data
              // id_usuario:localStorage.getItem("id_usuario"); y asi para mandarlo llamar
 
         }
@@ -43,7 +43,7 @@
 
 <template>
   <div class="container">
-    <h2 class="title">Primer informe</h2>
+    <h2 class="title">Inicio de cuatrimestre</h2>
     <form @submit.prevent="submitForm" class="form">
       <table class="form-table">
         <thead>
@@ -94,7 +94,7 @@
 
 <style scoped>
 .container {
-  max-width: 800px;
+  max-width: 1200px;
   margin: auto;
   padding: 20px;
   background: #f9f9f9;
