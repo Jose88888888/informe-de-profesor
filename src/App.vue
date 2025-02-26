@@ -10,6 +10,7 @@ import HelloWorld from './components/HelloWorld.vue'
     <nav class="navbar">
       <ul>
         <li><router-link to="/">Inicio</router-link></li>
+        <li><router-link to="/inicioinforme">Parcial</router-link></li>
         <li><router-link to="/horasxtrabajo">Inicio de cuatrimestre</router-link></li>
         <li><router-link to="/horasxactividad">Semanales</router-link></li>
         <li><router-link to="/actividadesespe">Especializadas</router-link></li>

@@ -1,15 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import login from './views/login.vue';
 import Home from './views/Home.vue';
-import HorasXTrabajo from './views/HorasXTrabajo.vue';
+import HorasXTrabajo from './views/horasXTrabajo.vue';
 import HorasxActividad from './views/horasxactividad.vue';
+import parcial from './views/inicioinforme.vue';
 import actividadesespe from './views/actividadesespe.vue';
 import otrasacti from './views/otrasacti.vue';
 import reportefinal from './views/reportefinal.vue';
 
 const routes = [
-    { path: '/login', component: login },
-    { path: '/', component: Home },
+    { path: '/', component: login },
+    { path: '/profesor', component: Home },
+    { path: '/inicioinforme', component: parcial},
     { path: '/horasxtrabajo', component: HorasXTrabajo },
     { path: '/horasxactividad', component: HorasxActividad},
     { path: '/actividadesespe', component: actividadesespe},
