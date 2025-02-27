@@ -1,68 +1,62 @@
-<script>
+<script setup>
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import axios from "axios";
 
-export default {
-  data() {
-    return {
-      empleado: "",
-      password: "",
-      error: "",
-    };
-  },
-  methods: {
-    async login() {
-      try {
-        const response = await axios.post("http://localhost:3000/api/login", {
-          empleado: this.empleado,
-          password: this.password,
-        });
-        
-        // Guardar la información del usuario en localStorage
-        const userInfo = {
-          id: response.data.id_usuario || response.data.id, // Depende de cómo se llame el campo en tu API
-          empleado: response.data.empleado || this.empleado,
-          nombre: response.data.nombre || response.data.nombreCompleto || "Usuario", // Adapta según tu respuesta de API
-          rol: response.data.rol
-        };
-        
-        // Guardar en localStorage como string JSON
-        localStorage.setItem('userInfo', JSON.stringify(userInfo));
-        
-        // También puedes guardar el token si tu API lo devuelve
-        if (response.data.token) {
-          localStorage.setItem('token', response.data.token);
-        }
+// Estado
+const empleado = ref("");
+const password = ref("");
+const error = ref("");
+const router = useRouter();
 
-        // Redireccionar según el rol
-        if (response.data.rol === "admin") {
-          this.$router.push("/admin");
-        } else if (response.data.rol === "profesor") {
-          this.$router.push("/profesor");
-        }
-      } catch (error) {
-        this.error =
-          error.response?.data?.error || "Error en el inicio de sesión";
-          
-        // Limpiar localStorage en caso de error
-        localStorage.removeItem('userInfo');
-        localStorage.removeItem('token');
-      }
-    },
-  },
-  // Verificar si ya hay una sesión activa al cargar el componente
-  created() {
-    // Si ya existe información de usuario en localStorage, redireccionar
-    const userInfo = localStorage.getItem('userInfo');
-    if (userInfo) {
-      const user = JSON.parse(userInfo);
-      if (user.rol === "admin") {
-        this.$router.push("/admin");
-      } else if (user.rol === "profesor") {
-        this.$router.push("/profesor");
-      }
+// Función de inicio de sesión
+const login = async () => {
+  try {
+    const response = await axios.post("http://localhost:3000/api/login", {
+      empleado: empleado.value,
+      password: password.value,
+    });
+
+    // Guardar datos en localStorage
+    localStorage.setItem("userid", response.data.id_usuario);
+    localStorage.setItem("usercorreo", response.data.correo);
+    localStorage.setItem("usernombre", response.data.correo);
+    localStorage.setItem("userempleado", response.data.empleado);
+    localStorage.setItem("userpass", response.data.password);
+    localStorage.setItem("userrol", response.data.rol);
+
+    if (response.data.token) {
+      localStorage.setItem("acces-token", response.data.token);
     }
+
+    // Redirección según el rol
+    if (response.data.rol === "admin") {
+      router.push("/admin");
+    } else if (response.data.rol === "profesor") {
+      router.push("/Home");
+    }
+  } catch (err) {
+    error.value = err.response?.data?.error || "Error en el inicio de sesión";
+
+    // Limpiar localStorage en caso de error
+    localStorage.removeItem("userid");
+    localStorage.removeItem("access-token");
   }
 };
+
+// Verificar sesión activa al cargar
+onMounted(() => {
+  const userId = localStorage.getItem("userid");
+  const userRol = localStorage.getItem("userrol");
+
+  if (userId) {
+    if (userRol === "admin") {
+      router.push("/admin");
+    } else if (userRol === "profesor") {
+      router.push("/Home");
+    }
+  }
+});
 </script>
 
 <template>
@@ -71,24 +65,12 @@ export default {
     <form @submit.prevent="login">
       <div class="form-group">
         <label for="empleado">Número de Empleado:</label>
-        <input
-          type="text"
-          id="empleado"
-          v-model="empleado"
-          required
-          class="input"
-        />
+        <input type="text" id="empleado" v-model="empleado" required class="input" />
       </div>
 
       <div class="form-group">
         <label for="password">Contraseña:</label>
-        <input
-          type="password"
-          id="password"
-          v-model="password"
-          required
-          class="input"
-        />
+        <input type="password" id="password" v-model="password" required class="input" />
       </div>
 
       <button type="submit" class="btn-login">Ingresar</button>

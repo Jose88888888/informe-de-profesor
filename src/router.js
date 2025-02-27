@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router';
+import { isActiveSession } from './middelware';
 import login from './views/login.vue';
 import Home from './views/Home.vue';
 import HorasXTrabajo from './views/horasXTrabajo.vue';
@@ -10,9 +11,13 @@ import reportefinal from './views/reportefinal.vue';
 
 const routes = [
     { path: '/', component: login },
-    { path: '/profesor', component: Home },
+    { path: '/Home', component: Home },
     { path: '/inicioinforme', component: parcial},
-    { path: '/horasxtrabajo', component: HorasXTrabajo },
+    { path: '/horasxtrabajo', component: HorasXTrabajo, beforeEnter: (from, next) =>{
+        if(isActiveSession()){
+            next();
+        }
+    }},
     { path: '/horasxactividad', component: HorasxActividad},
     { path: '/actividadesespe', component: actividadesespe},
     { path: '/otrasacti', component: otrasacti},

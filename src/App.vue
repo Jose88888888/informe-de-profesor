@@ -1,15 +1,24 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'
+/*import { computed } from 'vue';  
+const user=computed(() => {
+  if(localStorage.getItem('userid')){
+    return true;
+  }else{
+    return false;
+  }
+})
+*/
+
 
 </script>
 
 <template>
   <div>
+ 
 
-
-    <nav class="navbar">
+    <nav class="navbar"> //nav class="navbar" v-if="user" es para ocultar el navbar en el login
       <ul>
-        <li><router-link to="/">Inicio</router-link></li>
+        <li><router-link to="/Home">Inicio</router-link></li>
         <li><router-link to="/inicioinforme">Parcial</router-link></li>
         <li><router-link to="/horasxtrabajo">Inicio de cuatrimestre</router-link></li>
         <li><router-link to="/horasxactividad">Semanales</router-link></li>

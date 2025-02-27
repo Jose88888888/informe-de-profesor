@@ -18,10 +18,10 @@ async function conect() {
     variable.value = response.data;
 
     // Inicializar formData con un objeto por cada actividad
-    formData.value = response.data.map(() => ({
-      horas: "",
+    formData.value = response.data.map((item) => ({
+      id_informe:local.storage,
+      id_actividad:item.id_actividad,
       valor: "",
-      unidad: "",
       observaciones: "",
       archivo: null,
     }));
@@ -35,7 +35,7 @@ conect();
 async function submitForm() {
   // Validar que todos los campos estén llenos
   for (const item of formData.value) {
-    if (!item.horas ||  !item.unidad || !item.observaciones) {
+    if (!item.valor || !item.observaciones) {
       alert("Todos los campos son obligatorios.");
       return;
     }
