@@ -15,15 +15,18 @@ const login = async () => {
     const response = await axios.post("http://localhost:3000/api/login", {
       empleado: empleado.value,
       password: password.value,
+      
     });
+   
+    const user = response.data.usuario;
 
     // Guardar datos en localStorage
     localStorage.setItem("userid", response.data.id_usuario);
     localStorage.setItem("usercorreo", response.data.correo);
-    localStorage.setItem("usernombre", response.data.correo);
+    localStorage.setItem("usernombre", response.data.nombre);
     localStorage.setItem("userempleado", response.data.empleado);
-    localStorage.setItem("userpass", response.data.password);
     localStorage.setItem("userrol", response.data.rol);
+    localStorage.setItem('id_informe', response.data.id_informe);
 
     if (response.data.token) {
       localStorage.setItem("acces-token", response.data.token);

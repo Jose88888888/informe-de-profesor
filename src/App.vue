@@ -1,5 +1,5 @@
 <script setup>
-/*import { computed } from 'vue';  
+import { computed } from 'vue';  
 const user=computed(() => {
   if(localStorage.getItem('userid')){
     return true;
@@ -7,7 +7,7 @@ const user=computed(() => {
     return false;
   }
 })
-*/
+
 
 
 </script>
@@ -16,11 +16,11 @@ const user=computed(() => {
   <div>
  
 
-    <nav class="navbar"> //nav class="navbar" v-if="user" es para ocultar el navbar en el login
+    <nav class="navbar" v-if="user"> //nav class="navbar" v-if="user" es para ocultar el navbar en el login
       <ul>
         <li><router-link to="/Home">Inicio</router-link></li>
-        <li><router-link to="/inicioinforme">Parcial</router-link></li>
-        <li><router-link to="/horasxtrabajo">Inicio de cuatrimestre</router-link></li>
+        <li><router-link to="/inicioinforme">Inicio de cuatrimestre</router-link></li>
+        <li><router-link to="/horasxtrabajo">Nombre pendiente</router-link></li>
         <li><router-link to="/horasxactividad">Semanales</router-link></li>
         <li><router-link to="/actividadesespe">Especializadas</router-link></li>
         <li><router-link to="/otrasacti">Otras</router-link></li>

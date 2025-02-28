@@ -61,7 +61,6 @@ async function submitForm() {
           <tr>
             <th>Campo</th>
             <th>Horas/Días</th>
-            <th>Unidad de medida</th>
             <th>Observaciones</th>
             <th>Archivo</th>
           </tr>
@@ -70,7 +69,6 @@ async function submitForm() {
           <tr v-for="(item, index) in variable" :key="index">
             <td>{{ item.descripcion }}</td>
             <td><input type="number" v-model="formData[index].horas" required /></td>
-            <td><input type="text" v-model="formData[index].unidad" required /></td>
             <td><input type="text" v-model="formData[index].observaciones" required /></td>
             <td><input type="file" @change="formData[index].archivo = $event.target.files[0]" /></td>
           </tr>

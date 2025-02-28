@@ -41,6 +41,7 @@ import axios from 'axios';
 import { watch } from "vue";
 const router = useRouter();
 const nombreUsuario = ref('');
+const idUsuario = ref();
 const formData = ref({ parcial: 1 });
 watch(() => formData.value.parcial, (nuevoValor, antiguoValor) => {
   if (nuevoValor < 1 || nuevoValor > 3) {
@@ -51,11 +52,11 @@ const fechaActual = ref('');
 const cuatrimestre = ref('');
 
 onMounted(() => {
- // verificarSesion();
+ verificarSesion();
   establecerFecha();
 });
 
-/*const verificarSesion = () => {
+const verificarSesion = () => {
   const userId = localStorage.getItem("userid");
   const userNombre = localStorage.getItem("usernombre");
 
@@ -66,7 +67,7 @@ onMounted(() => {
     router.push("/");
     alert("Debe iniciar sesión para acceder a esta página");
   }
-};*/
+}
 
 const establecerFecha = () => {
   const fecha = new Date();
@@ -79,25 +80,33 @@ const establecerFecha = () => {
 const submitForm = async () => {
   try {
     if (!idUsuario.value) throw new Error('No se encontró información del usuario. Inicie sesión nuevamente.');
-    
+
     const informeData = {
       id_usuario: localStorage.getItem('userid'),
       cuatrimestre: cuatrimestre.value,
       parcial: formData.value.parcial,
       fecha: new Date().toISOString().split('T')[0],
-      status: 'Activo'
+      estatus: 'Activo'
     };
-    
+
     const token = localStorage.getItem('token');
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    await axios.post('http://localhost:3000/api/informes', informeData, { headers });
     
+    // Enviar la solicitud y capturar la respuesta
+    const response = await axios.post('http://localhost:3000/api/informes', informeData, { headers });
+
+    // Guardar el id_informe en localStorage si la inserción fue exitosa
+    if (response.data && response.data.id_informe) {
+      localStorage.setItem('id_informe', response.data.id_informe);
+    }
+
     alert('Informe guardado con éxito');
     formData.value.parcial = 1;
   } catch (error) {
     alert('Error al guardar el informe: ' + (error.response?.data?.message || error.message));
   }
 };
+
 </script>
 
 <style scoped>
