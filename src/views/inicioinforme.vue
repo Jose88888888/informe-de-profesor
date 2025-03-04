@@ -43,6 +43,7 @@ const router = useRouter();
 const nombreUsuario = ref('');
 const idUsuario = ref();
 const formData = ref({ parcial: 1 });
+
 watch(() => formData.value.parcial, (nuevoValor, antiguoValor) => {
   if (nuevoValor < 1 || nuevoValor > 3) {
     formData.value.parcial = antiguoValor; // Revertir al último valor válido

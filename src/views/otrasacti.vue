@@ -1,60 +1,68 @@
 <script setup>
-import { ref } from "vue";
-import axios from "axios";
+import { ref } from 'vue';
+import axios from 'axios';
 
-const variable = ref([]);
-const formData = ref([]); // Nuevo array para almacenar los datos del formulario
+const actividades = ref([]);
 
-async function conect() {
-  const options = {
-    method: "GET",
-    url: "http://localhost:3000/api/actividades/actividades/otros",
-    headers: {
-      "Content-Type": "application/json",
-    },
-  };
-  try {
-    const response = await axios.request(options);
-    variable.value = response.data;
-
-    // Inicializar formData con un objeto por cada actividad
-    formData.value = response.data.map((item) => ({
-      id_informe:local.storage,
-      id_actividad:item.id_actividad,
-      valor: "",
-      observaciones: "",
-      archivo: null,
-    }));
-  } catch (error) {
-    console.error(error);
-  }
+// Función para obtener las actividades semanales desde la API
+async function obtenerActividades() {
+    try {
+        const response = await axios.get("http://localhost:3000/api/actividades/actividades/otros");
+        actividades.value = response.data;
+        console.log(actividades.value);
+    } catch (error) {
+        console.error("Error al obtener actividades:", error);
+    }
 }
 
-conect();
+obtenerActividades();
 
+// Función para manejar el envío del formulario
 async function submitForm() {
-  // Validar que todos los campos estén llenos
-  for (const item of formData.value) {
-    if (!item.valor || !item.observaciones) {
-      alert("Todos los campos son obligatorios.");
-      return;
+    const id_informe = localStorage.getItem("id_informe");
+    if (!id_informe) {
+        alert("Error: No se encontró el ID del informe. Inicia sesión nuevamente.");
+        return;
     }
-  }
 
-  try {
-    await axios.post("http://localhost:3000/api/informeactividad", formData.value, {
-      headers: { "Content-Type": "application/json" },
+    const datosAEnviar = actividades.value.map((actividad) => {
+        const valor = document.getElementById(`valor-${actividad.id_actividad}`).value || null;
+        const observacion = document.getElementById(`observacion-${actividad.id_actividad}`).value || null;
+        const evidenciaFile = document.getElementById(`evidencia-${actividad.id_actividad}`).files[0];
+
+        return {
+            id_informe,
+            id_actividad: actividad.id_actividad,
+            valor: valor ? parseInt(valor) : null,
+            observacion,
+            evidencia: evidenciaFile ? evidenciaFile.name : null,
+        };
     });
-    alert("Datos enviados correctamente");
-  } catch (error) {
-    console.error("Error al enviar datos", error);
-  }
+
+    try {
+        for (const data of datosAEnviar) {
+            await axios.post("http://localhost:3000/api/informeactividad/", data);
+        }
+        alert("Datos enviados correctamente");
+    } catch (error) {
+        console.error("Error al insertar datos:", error);
+        alert("Ocurrió un error al enviar los datos.");
+    }
+}
+
+// Función para limpiar el formulario
+function resetForm() {
+    actividades.value.forEach((actividad) => {
+        document.getElementById(`valor-${actividad.id_actividad}`).value = "";
+        document.getElementById(`observacion-${actividad.id_actividad}`).value = "";
+        document.getElementById(`evidencia-${actividad.id_actividad}`).value = "";
+    });
 }
 </script>
 
 <template>
   <div class="container">
-    <h2 class="title">Otras</h2>
+    <h2 class="title">Semanales</h2>
     <form @submit.prevent="submitForm" class="form">
       <table class="form-table">
         <thead>
@@ -66,22 +74,21 @@ async function submitForm() {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(item, index) in variable" :key="index">
+          <tr v-for="item in actividades" :key="item.id_actividad">
             <td>{{ item.descripcion }}</td>
-            <td><input type="number" v-model="formData[index].horas" required /></td>
-            <td><input type="text" v-model="formData[index].observaciones" required /></td>
-            <td><input type="file" @change="formData[index].archivo = $event.target.files[0]" /></td>
+            <td><input type="number" :id="'valor-' + item.id_actividad"></td>
+            <td><input type="text" :id="'observacion-' + item.id_actividad"></td>
+            <td><input type="file" :id="'evidencia-' + item.id_actividad"></td>
           </tr>
         </tbody>
       </table>
-
       <div class="buttons">
         <button type="submit" class="btn-submit">Enviar</button>
+        <button type="button" @click="resetForm" class="btn-reset">Limpiar</button>
       </div>
     </form>
   </div>
 </template>
-
 
 <style scoped>
 .container {
@@ -103,25 +110,10 @@ async function submitForm() {
   border-collapse: collapse;
 }
 
-.form-table th,
-.form-table td {
+.form-table th, .form-table td {
   border: 1px solid #ccc;
-  padding: 10px;
+  padding: 25px;
   text-align: center;
-}
-
-.input,
-.textarea,
-.file-input {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-.textarea {
-  height: 40px;
-  resize: vertical;
 }
 
 .buttons {
@@ -130,21 +122,21 @@ async function submitForm() {
   margin-top: 20px;
 }
 
-.btn-submit,
-.btn-reset {
+.btn-submit {
+  background: #28a745;
+  color: white;
   padding: 10px 15px;
   border: none;
   cursor: pointer;
   border-radius: 5px;
 }
 
-.btn-submit {
-  background: #28a745;
-  color: white;
-}
-
 .btn-reset {
   background: #dc3545;
   color: white;
+  padding: 10px 15px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
 }
 </style>

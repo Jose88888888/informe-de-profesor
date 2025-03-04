@@ -1,49 +1,68 @@
 <script setup>
- import { ref } from 'vue';
- import axios from 'axios';
- // localStorage.setItem("id_usuario", 1); // esto sirver para guardar un dato en la compu del usuario
+import { ref } from 'vue';
+import axios from 'axios';
 
- // data:{
- // id_usuario:localStorage.getItem("id_usuario"); y asi para mandarlo llamar
+const actividades = ref([]);
 
- const variable=ref([{}]);
- async function conect(){
-        const options = {
-            method: 'GET',
-            url: "http://localhost:3000/api/actividades/actividades/especial",
-            headers: {
-            'Content-Type': 'application/json',
-            },
-            //data
-             // id_usuario:localStorage.getItem("id_usuario"); y asi para mandarlo llamar
+// Función para obtener las actividades semanales desde la API
+async function obtenerActividades() {
+    try {
+        const response = await axios.get("http://localhost:3000/api/actividades/actividades/especial");
+        actividades.value = response.data;
+        console.log(actividades.value);
+    } catch (error) {
+        console.error("Error al obtener actividades:", error);
+    }
+}
 
-        }
-        try {
-            const response = await axios.request(options)
-            console.log(variable.value);
-            variable.value=response.data;
-            console.log("response",variable.value);
+obtenerActividades();
 
-            /* response.data.forEach(element => {
-                console.log(element);
-            }); */
-            //return response.data
-        }
-        catch (error) {
-            console.error(error)
-            //return [{}]
-        }
+// Función para manejar el envío del formulario
+async function submitForm() {
+    const id_informe = localStorage.getItem("id_informe");
+    if (!id_informe) {
+        alert("Error: No se encontró el ID del informe. Inicia sesión nuevamente.");
+        return;
     }
 
-    conect();
-    //aqui poner la otra funcion de de la api de inserccion cuando este lista
+    const datosAEnviar = actividades.value.map((actividad) => {
+        const valor = document.getElementById(`valor-${actividad.id_actividad}`).value || null;
+        const observacion = document.getElementById(`observacion-${actividad.id_actividad}`).value || null;
+        const evidenciaFile = document.getElementById(`evidencia-${actividad.id_actividad}`).files[0];
 
+        return {
+            id_informe,
+            id_actividad: actividad.id_actividad,
+            valor: valor ? parseInt(valor) : null,
+            observacion,
+            evidencia: evidenciaFile ? evidenciaFile.name : null,
+        };
+    });
+
+    try {
+        for (const data of datosAEnviar) {
+            await axios.post("http://localhost:3000/api/informeactividad/", data);
+        }
+        alert("Datos enviados correctamente");
+    } catch (error) {
+        console.error("Error al insertar datos:", error);
+        alert("Ocurrió un error al enviar los datos.");
+    }
+}
+
+// Función para limpiar el formulario
+function resetForm() {
+    actividades.value.forEach((actividad) => {
+        document.getElementById(`valor-${actividad.id_actividad}`).value = "";
+        document.getElementById(`observacion-${actividad.id_actividad}`).value = "";
+        document.getElementById(`evidencia-${actividad.id_actividad}`).value = "";
+    });
+}
 </script>
-
 
 <template>
   <div class="container">
-    <h2 class="title">Especiales</h2>
+    <h2 class="title">Semanales</h2>
     <form @submit.prevent="submitForm" class="form">
       <table class="form-table">
         <thead>
@@ -55,34 +74,14 @@
           </tr>
         </thead>
         <tbody>
-
-          <tr v-for="item in variable">
-            <td><label for="horasClase">{{ item.descripcion }}</label></td>
-            <td><input type="numbrer"></td>
-            <td><input type="text"/></td>
-            <td><input type="file"/></td>
-          
-
-          
-        <!--     <td><label for="proyectos">Número de proyectos de estadía asignados:</label></td>
-            <td><input type="number" id="proyectos" v-model.number="formData.proyectos" class="input" /></td>
-            <td><textarea v-model="formData.observaciones.proyectos" class="textarea"></textarea></td>
-            <td><input type="file" class="file-input" /></td>
-          
-            <td><label for="tutorias">Número de grupos de tutorías asignados:</label></td>
-            <td><input type="number" id="tutorias" v-model.number="formData.tutorias" class="input" /></td>
-            <td><textarea v-model="formData.observaciones.tutorias" class="textarea"></textarea></td>
-            <td><input type="file" class="file-input" /></td>
-          
-            <td><label for="integradores">Número de proyectos integradores asignados:</label></td>
-            <td><input type="number" id="integradores" v-model.number="formData.integradores" class="input" /></td>
-            <td><textarea v-model="formData.observaciones.integradores" class="textarea"></textarea></td>
-            <td><input type="file" class="file-input" /></td> -->
+          <tr v-for="item in actividades" :key="item.id_actividad">
+            <td>{{ item.descripcion }}</td>
+            <td><input type="number" :id="'valor-' + item.id_actividad"></td>
+            <td><input type="text" :id="'observacion-' + item.id_actividad"></td>
+            <td><input type="file" :id="'evidencia-' + item.id_actividad"></td>
           </tr>
-
         </tbody>
       </table>
-
       <div class="buttons">
         <button type="submit" class="btn-submit">Enviar</button>
         <button type="button" @click="resetForm" class="btn-reset">Limpiar</button>
@@ -90,7 +89,6 @@
     </form>
   </div>
 </template>
-
 
 <style scoped>
 .container {
@@ -118,38 +116,27 @@
   text-align: center;
 }
 
-.input, .textarea, .file-input {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-.textarea {
-  height: 40px;
-  resize: vertical;
-}
-
 .buttons {
   display: flex;
   justify-content: space-between;
   margin-top: 20px;
 }
 
-.btn-submit, .btn-reset {
+.btn-submit {
+  background: #28a745;
+  color: white;
   padding: 10px 15px;
   border: none;
   cursor: pointer;
   border-radius: 5px;
 }
 
-.btn-submit {
-  background: #28a745;
-  color: white;
-}
-
 .btn-reset {
   background: #dc3545;
   color: white;
+  padding: 10px 15px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
 }
 </style>
