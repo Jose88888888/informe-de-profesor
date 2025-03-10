@@ -15,7 +15,6 @@ const login = async () => {
     const response = await axios.post("http://localhost:3000/api/login", {
       empleado: empleado.value,
       password: password.value,
-      
     });
    
     const user = response.data.usuario;
@@ -25,16 +24,24 @@ const login = async () => {
     localStorage.setItem("usercorreo", response.data.correo);
     localStorage.setItem("usernombre", response.data.nombre);
     localStorage.setItem("userempleado", response.data.empleado);
-    localStorage.setItem("userrol", response.data.rol);
+    localStorage.setItem("userrol", response.data.rol.trim());
     localStorage.setItem('id_informe', response.data.id_informe);
+    localStorage.setItem("access-token", response.data.token);
+
+    // Añade esto después de recibir la respuesta
+console.log("Respuesta del servidor:", response.data);
+console.log("Rol recibido:", response.data.rol);
+
+// Y después de guardar en localStorage
+console.log("Rol guardado:", localStorage.getItem("userrol"));
 
     if (response.data.token) {
-      localStorage.setItem("acces-token", response.data.token);
+      localStorage.setItem("access-token", response.data.token); // Corregido: "acces-token" -> "access-token"
     }
 
     // Redirección según el rol
     if (response.data.rol === "admin") {
-      router.push("/admin");
+      router.push("/homeadmin"); // Asegúrate de que esta ruta existe en tu router
     } else if (response.data.rol === "profesor") {
       router.push("/Home");
     }
@@ -54,7 +61,7 @@ onMounted(() => {
 
   if (userId) {
     if (userRol === "admin") {
-      router.push("/admin");
+      router.push("/homeadmin");
     } else if (userRol === "profesor") {
       router.push("/Home");
     }
