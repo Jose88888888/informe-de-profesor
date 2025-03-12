@@ -12,7 +12,8 @@ const usuarioActual = ref({
   nombre: '',
   nu_empleado: '',
   contraseña: '',
-  rol: 'usuario' // valor por defecto
+  rol: 'usuario' ,// valor por defecto
+  carrera: ''
 });
 const mensajeAlerta = ref('');
 const tipoAlerta = ref('');
@@ -37,7 +38,8 @@ function abrirModalCrear() {
     nombre: '',
     nu_empleado: '',
     contraseña: '',
-    rol: 'usuario'
+    rol: 'usuario',
+    carrera: '',
   };
   modoEdicion.value = false;
   modalAbierto.value = true;
@@ -81,7 +83,8 @@ async function crearUsuario() {
       nombre: usuarioActual.value.nombre,
       nu_empleado: usuarioActual.value.nu_empleado,
       contraseña: usuarioActual.value.contraseña,
-      rol: usuarioActual.value.rol
+      rol: usuarioActual.value.rol,
+      carrera: usuarioActual.value.carrera
     });
     mostrarMensaje('Usuario creado correctamente', 'exito');
   } catch (error) {
@@ -97,6 +100,7 @@ async function actualizarUsuario() {
       nombre: usuarioActual.value.nombre,
       nu_empleado: usuarioActual.value.nu_empleado,
       rol: usuarioActual.value.rol,
+      carrera: usuarioActual.value.carrera,
       // Solo enviar contraseña si se ha modificado
       ...(usuarioActual.value.contraseña ? { contraseña: usuarioActual.value.contraseña } : {})
     });
@@ -165,6 +169,7 @@ onMounted(obtenerUsuarios);
             <th>Correo</th>
             <th>Número de Empleado</th>
             <th>Rol</th>
+            <th>Carrera</th>
             <th>Acciones</th>
           </tr>
         </thead>
@@ -175,6 +180,7 @@ onMounted(obtenerUsuarios);
             <td>{{ usuario.correo }}</td>
             <td>{{ usuario.nu_empleado }}</td>
             <td>{{ usuario.rol }}</td>
+            <td>{{ usuario.carrera }}</td>
             <td class="acciones-celda">
               <button @click="abrirModalEditar(usuario)" class="boton boton-editar">
                 Editar
@@ -246,8 +252,18 @@ onMounted(obtenerUsuarios);
               <label for="rol">Rol:</label>
               <select id="rol" v-model="usuarioActual.rol" required>
                 <option value="admin">Administrador</option>
-                <option value="usuario">Usuario</option>
+                <option value="profesor">Profesor</option>
               </select>
+            </div>
+
+            <div class="campo-formulario">
+              <label for="carrera">carrera:</label>
+              <input
+                id="carrera"
+                v-model="usuarioActual.carrera"
+                type="text"
+                required
+              />
             </div>
             
             <div class="modal-pie">

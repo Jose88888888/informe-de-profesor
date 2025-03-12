@@ -89,7 +89,7 @@ async function crearActividad() {
 // Actualizar actividad existente 
 async function actualizarActividad() {
   try {
-    await axios.put(`http://localhost:3000//api/admin/updateacti/${actividadActual.value.id_actividad}`, {
+    await axios.put(`http://localhost:3000/api/admin/updateacti/${actividadActual.value.id_actividad}`, {
       descripcion: actividadActual.value.descripcion,
       tipo: actividadActual.value.tipo,
       status: actividadActual.value.status,
@@ -106,7 +106,7 @@ async function cambiarEstadoActividad(actividad) {
   const nuevoEstado = actividad.status === 'activo' ? 'inactivo' : 'activo';
   
   try {
-    await axios.put(`http://localhost:3000//api/admin/deleteacti/${actividad.id_actividad}`, {
+    await axios.put(`http://localhost:3000/api/admin/deleteacti/${actividad.id_actividad}`, {
       status: nuevoEstado
     });
     mostrarMensaje(`Actividad ${nuevoEstado === 'activo' ? 'activada' : 'desactivada'} correctamente`, 'exito');

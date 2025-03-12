@@ -4,15 +4,74 @@ import axios from 'axios';
 
 // Variable para almacenar las actividades obtenidas desde la API
 const actividades = ref([]);
+// Array para almacenar los IDs de las actividades ya insertadas
+const actividadesInsertadas = ref([]);
 
 // Función para obtener las actividades desde la API
 async function obtenerActividades() {
     try {
         const response = await axios.get("http://localhost:3000/api/actividades/actividades/inicial");
         actividades.value = response.data;
-        console.log(actividades.value);
+        console.log("Actividades obtenidas:", actividades.value);
+        
+        // Verificar si ya existen registros para este informe
+        await verificarRegistrosExistentes();
     } catch (error) {
         console.error("Error al obtener actividades:", error);
+        alert(`Error al obtener actividades: ${error.message}`);
+    }
+}
+
+// Función para verificar si ya existen registros para este informe
+async function verificarRegistrosExistentes() {
+    const id_informe = localStorage.getItem("id_informe");
+    if (!id_informe) {
+        console.warn("No se encontró el ID del informe en localStorage");
+        return;
+    }
+    
+    try {
+        // Usamos el endpoint correcto y evitamos la caché
+        const timestamp = new Date().getTime();
+        const response = await axios.get(`http://localhost:3000/api/informeactividad/informe/${id_informe}?_t=${timestamp}`, {
+            headers: {
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            }
+        });
+        
+        console.log("Registros existentes:", response.data);
+        
+        // Almacenar las IDs de las actividades que ya tienen registros
+        if (response.data && response.data.length > 0) {
+            actividadesInsertadas.value = response.data.map(item => item.id_actividad);
+            console.log("Actividades ya insertadas:", actividadesInsertadas.value);
+            
+            // Pre-llenar el formulario con los datos existentes
+            response.data.forEach(item => {
+                const valorElement = document.getElementById(`valor-${item.id_actividad}`);
+                const observacionElement = document.getElementById(`observacion-${item.id_actividad}`);
+                const evidenciaLabelElement = document.getElementById(`evidencia-label-${item.id_actividad}`);
+                
+                if (valorElement) {
+                    valorElement.value = item.valor || '';
+                }
+                
+                if (observacionElement) {
+                    observacionElement.value = item.observacion || '';
+                }
+                
+                if (evidenciaLabelElement && item.evidencia) {
+                    evidenciaLabelElement.textContent = `Archivo actual: ${item.evidencia}`;
+                }
+            });
+        } else {
+            console.log("No existen registros previos para este informe");
+        }
+    } catch (error) {
+        console.error("Error al verificar registros existentes:", error);
+        alert(`Error al verificar registros existentes: ${error.message}`);
     }
 }
 
@@ -21,50 +80,152 @@ obtenerActividades();
 
 // Función para manejar el envío del formulario
 async function submitForm() {
-    const id_informe = localStorage.getItem("id_informe"); // Obtener el id_informe almacenado
+    const id_informe = localStorage.getItem("id_informe");
 
     if (!id_informe) {
         alert("Error: No se encontró el ID del informe. Inicia sesión nuevamente.");
         return;
     }
 
-    // Preparar los datos de cada actividad para enviarlos a la API
-    const datosAEnviar = actividades.value.map((actividad) => {
-        const valor = document.getElementById(`valor-${actividad.id_actividad}`).value || null;
-        const observacion = document.getElementById(`observacion-${actividad.id_actividad}`).value || null;
-        const evidenciaFile = document.getElementById(`evidencia-${actividad.id_actividad}`).files[0];
-
-        return {
-            id_informe,
-            id_actividad: actividad.id_actividad,
-            valor: valor ? parseInt(valor) : null,
-            observacion,
-            evidencia: evidenciaFile ? evidenciaFile.name : null, // Solo se guarda el nombre del archivo en la BD
-        };
-    });
-
     try {
-        // Enviar cada actividad de forma individual
-        for (const data of datosAEnviar) {
-            await axios.post("http://localhost:3000/api/informeactividad/", data);
+        // Deshabilitar el botón de envío para evitar múltiples envíos
+        const submitButton = document.querySelector('.btn-submit');
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = 'Enviando...';
         }
+
+        // Procesar cada actividad individualmente
+        for (const actividad of actividades.value) {
+            const id_actividad = actividad.id_actividad;
+            const valorElement = document.getElementById(`valor-${id_actividad}`);
+            const observacionElement = document.getElementById(`observacion-${id_actividad}`);
+            const evidenciaElement = document.getElementById(`evidencia-${id_actividad}`);
+            
+            const valor = valorElement ? valorElement.value : null;
+            const observacion = observacionElement ? observacionElement.value : null;
+            const evidenciaFile = evidenciaElement && evidenciaElement.files.length > 0 ? evidenciaElement.files[0] : null;
+            
+            // Determinar si es actualización o inserción
+            const esActualizacion = actividadesInsertadas.value.includes(id_actividad);
+            console.log(`Actividad ${id_actividad} - Es actualización: ${esActualizacion}`);
+            
+            // Preparar los datos comunes para ambos casos
+            const formData = new FormData();
+            formData.append('id_informe', id_informe);
+            formData.append('id_actividad', id_actividad);
+            
+            if (valor !== null && valor !== '') {
+                formData.append('valor', parseInt(valor));
+            }
+            
+            if (observacion !== null && observacion !== '') {
+                formData.append('observacion', observacion);
+            }
+            
+            if (evidenciaFile) {
+                formData.append('evidencia', evidenciaFile);
+            }
+            
+            // Crear un objeto de datos para depuración
+            const datosEnviados = {
+                id_informe,
+                id_actividad,
+                valor: valor !== null && valor !== '' ? parseInt(valor) : null,
+                observacion: observacion !== null && observacion !== '' ? observacion : null,
+                evidencia: evidenciaFile ? evidenciaFile.name : null
+            };
+            
+            try {
+                if (esActualizacion) {
+                    // ACTUALIZACIÓN: Usar el endpoint correcto
+                    console.log(`Actualizando actividad ${id_actividad}`, datosEnviados);
+                    
+                    // Evitar la caché añadiendo un timestamp
+                    const timestamp = new Date().getTime();
+                    const url = `http://localhost:3000/api/informeactividad/${id_informe}/${id_actividad}?_t=${timestamp}`;
+                    
+                    // Si hay archivo, usamos FormData, de lo contrario, probamos con JSON
+                    if (evidenciaFile) {
+                        const respuesta = await axios.put(url, formData, {
+                            headers: {
+                                'Content-Type': 'multipart/form-data'
+                            }
+                        });
+                        console.log(`Respuesta de actualización con archivo:`, respuesta.data);
+                    } else {
+                        const respuesta = await axios.put(url, datosEnviados);
+                        console.log(`Respuesta de actualización sin archivo:`, respuesta.data);
+                    }
+                    
+                } else {
+                    // INSERCIÓN: Usar el endpoint correcto
+                    console.log(`Insertando nueva actividad ${id_actividad}`, datosEnviados);
+                    
+                    // Si hay archivo, usamos FormData, de lo contrario, JSON
+                    let respuesta;
+                    if (evidenciaFile) {
+                        respuesta = await axios.post("http://localhost:3000/api/informeactividad/", formData, {
+                            headers: {
+                                'Content-Type': 'multipart/form-data'
+                            }
+                        });
+                    } else {
+                        respuesta = await axios.post("http://localhost:3000/api/informeactividad/", datosEnviados);
+                    }
+                    
+                    console.log(`Respuesta de inserción:`, respuesta.data);
+                    
+                    // Agregar a la lista de actividades insertadas
+                    actividadesInsertadas.value.push(id_actividad);
+                }
+            } catch (errorProcesamiento) {
+                console.error(`Error al procesar la actividad ${id_actividad}:`, errorProcesamiento);
+                console.error(`Detalle del error:`, errorProcesamiento.response ? errorProcesamiento.response.data : 'Sin detalles');
+                alert(`Error al procesar la actividad ${actividad.descripcion}: ${errorProcesamiento.message}`);
+            }
+        }
+        
+        // Re-habilitar el botón de envío
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Enviar';
+        }
+        
         alert("Datos enviados correctamente");
+        
+        // Forzar una recarga completa de los datos después de todas las actualizaciones
+        console.log("Recargando datos actualizados...");
+        await verificarRegistrosExistentes();
     } catch (error) {
-        console.error("Error al insertar datos:", error);
-        alert("Ocurrió un error al enviar los datos.");
+        console.error("Error general al procesar datos:", error);
+        
+        // Re-habilitar el botón de envío en caso de error
+        const submitButton = document.querySelector('.btn-submit');
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Enviar';
+        }
+        
+        alert(`Ocurrió un error al enviar los datos: ${error.message}`);
     }
 }
-// ✅ Función para limpiar el formulario
+
+// Función para limpiar el formulario
 function resetForm() {
     actividades.value.forEach((actividad) => {
-        document.getElementById(`valor-${actividad.id_actividad}`).value = "";
-        document.getElementById(`observacion-${actividad.id_actividad}`).value = "";
-        document.getElementById(`evidencia-${actividad.id_actividad}`).value = "";
+        const valorElement = document.getElementById(`valor-${actividad.id_actividad}`);
+        const observacionElement = document.getElementById(`observacion-${actividad.id_actividad}`);
+        const evidenciaElement = document.getElementById(`evidencia-${actividad.id_actividad}`);
+        const evidenciaLabelElement = document.getElementById(`evidencia-label-${actividad.id_actividad}`);
+        
+        if (valorElement) valorElement.value = "";
+        if (observacionElement) observacionElement.value = "";
+        if (evidenciaElement) evidenciaElement.value = "";
+        if (evidenciaLabelElement) evidenciaLabelElement.textContent = "";
     });
 }
 </script>
-
-
 
 <template>
   <div class="container">
@@ -73,18 +234,33 @@ function resetForm() {
       <table class="form-table">
         <thead>
           <tr>
-            <th>Campo</th>
+            <th>Actividad</th>
             <th>Horas/Días</th>
             <th>Observaciones</th>
-            <th>Archivo</th>
+            <th>Evidencia</th>
+            <th>Estado</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in actividades" :key="item.id">
+          <tr v-for="item in actividades" :key="item.id_actividad">
             <td>{{ item.descripcion }}</td>
             <td><input type="number" :id="'valor-' + item.id_actividad"></td>
             <td><input type="text" :id="'observacion-' + item.id_actividad"></td>
-            <td><input type="file" :id="'evidencia-' + item.id_actividad"></td>
+            <td>
+              <div>
+                <input type="file" :id="'evidencia-' + item.id_actividad">
+                <!-- Etiqueta para mostrar el nombre del archivo existente -->
+                <small :id="'evidencia-label-' + item.id_actividad" class="file-label"></small>
+              </div>
+            </td>
+            <td>
+              <span v-if="actividadesInsertadas.includes(item.id_actividad)" class="status update">
+                Actualizar
+              </span>
+              <span v-else class="status insert">
+                Insertar
+              </span>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -96,6 +272,7 @@ function resetForm() {
     </form>
   </div>
 </template>
+
 
 
 <style scoped>

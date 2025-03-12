@@ -66,9 +66,9 @@ const logout = () => {
       <ul>
         <li><router-link to="/Home">Inicio</router-link></li>
         <li><router-link to="/inicioinforme">Inicio de cuatrimestre</router-link></li>
-        <li><router-link to="/horasxtrabajo">Nombre pendiente</router-link></li>
+        <li><router-link to="/horasxtrabajo">Datos cuatrimestrales</router-link></li>
         <li><router-link to="/horasxactividad">Semanales</router-link></li>
-        <li><router-link to="/actividadesespe">Especializadas</router-link></li>
+        <li><router-link to="/actividadesespe">Extraordinarios</router-link></li>
         <li><router-link to="/otrasacti">Otras</router-link></li>
         <li><router-link to="/reportefinal">Reporte final</router-link></li>
         <li><a href="#" @click.prevent="logout">Cerrar Sesión</a></li>

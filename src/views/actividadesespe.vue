@@ -67,10 +67,10 @@ function resetForm() {
       <table class="form-table">
         <thead>
           <tr>
-            <th>Campo</th>
+            <th>Actividad</th>
             <th>Horas/Días</th>
             <th>Observaciones</th>
-            <th>Archivo</th>
+            <th>Evidencia</th>
           </tr>
         </thead>
         <tbody>

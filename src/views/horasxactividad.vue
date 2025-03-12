@@ -1,85 +1,90 @@
 <script setup>
- import { ref } from 'vue';
- import axios from 'axios';
- // localStorage.setItem("id_usuario", 1); // esto sirver para guardar un dato en la compu del usuario
+import { ref } from "vue";
+import axios from "axios";
 
- // data:{
- // id_usuario:localStorage.getItem("id_usuario"); y asi para mandarlo llamar
+// Variable para almacenar las actividades semanales
+const actividadesSemanales = ref([]);
 
- const variable=ref([{}]);
- async function conect(){
-        const options = {
-            method: 'GET',
-            url: "http://localhost:3000/api/actividades/actividades/semanal",
-            headers: {
-            'Content-Type': 'application/json',
-            },
-            //data
-             // id_usuario:localStorage.getItem("id_usuario"); y asi para mandarlo llamar
+// Función para obtener las actividades semanales desde la API
+async function obtenerActividadesSemanales() {
+  try {
+    const response = await axios.get("http://localhost:3000/api/actividades/actividades/semanal");
+    actividadesSemanales.value = response.data;
+    console.log(actividadesSemanales.value);
+  } catch (error) {
+    console.error("Error al obtener actividades semanales:", error);
+  }
+}
 
-        }
-        try {
-            const response = await axios.request(options)
-            console.log(variable.value);
-            variable.value=response.data;
-            console.log("response",variable.value);
+// Llamar a la función al cargar el componente
+obtenerActividadesSemanales();
 
-            /* response.data.forEach(element => {
-                console.log(element);
-            }); */
-            //return response.data
-        }
-        catch (error) {
-            console.error(error)
-            //return [{}]
-        }
+// Función para manejar el envío del formulario
+async function submitForm() {
+  const id_informe = localStorage.getItem("id_informe"); // Obtener el id_informe almacenado
+
+  if (!id_informe) {
+    alert("Error: No se encontró el ID del informe. Inicia sesión nuevamente.");
+    return;
+  }
+
+  // Preparar los datos de cada actividad para enviarlos a la API
+  const datosAEnviar = actividadesSemanales.value.map((actividad) => {
+    const valor = document.getElementById(`valor-${actividad.id_actividad}`).value || null;
+    const observacion = document.getElementById(`observacion-${actividad.id_actividad}`).value || null;
+    const evidenciaFile = document.getElementById(`evidencia-${actividad.id_actividad}`).files[0];
+
+    return {
+      id_informe,
+      id_actividad: actividad.id_actividad,
+      valor: valor ? parseInt(valor) : null,
+      observacion,
+      evidencia: evidenciaFile ? evidenciaFile.name : null, // Solo se guarda el nombre del archivo en la BD
+    };
+  });
+
+  try {
+    // Enviar cada actividad de forma individual
+    for (const data of datosAEnviar) {
+      await axios.post("http://localhost:3000/api/informeactividad/", data);
     }
+    alert("Datos enviados correctamente");
+  } catch (error) {
+    console.error("Error al insertar datos:", error);
+    alert("Ocurrió un error al enviar los datos.");
+  }
+}
 
-    conect();
-    //aqui poner la otra funcion de de la api de inserccion cuando este lista
-
+// Función para limpiar el formulario
+function resetForm() {
+  actividadesSemanales.value.forEach((actividad) => {
+    document.getElementById(`valor-${actividad.id_actividad}`).value = "";
+    document.getElementById(`observacion-${actividad.id_actividad}`).value = "";
+    document.getElementById(`evidencia-${actividad.id_actividad}`).value = "";
+  });
+}
 </script>
-
 
 <template>
   <div class="container">
-    <h2 class="title">Semanales</h2>
+    <h2 class="title">Actividades Semanales</h2>
     <form @submit.prevent="submitForm" class="form">
       <table class="form-table">
         <thead>
           <tr>
-            <th>Campo</th>
+            <th>Actividad</th>
             <th>Horas/Días</th>
             <th>Observaciones</th>
-            <th>Archivo</th>
+            <th>Evidencia</th>
           </tr>
         </thead>
         <tbody>
-
-          <tr v-for="item in variable">
-            <td><label for="horasClase">{{ item.descripcion }}</label></td>
-            <td><input type="numbrer"></td>
-            <td><input type="text"/></td>
-            <td><input type="file"/></td>
-          
-
-          
-        <!--     <td><label for="proyectos">Número de proyectos de estadía asignados:</label></td>
-            <td><input type="number" id="proyectos" v-model.number="formData.proyectos" class="input" /></td>
-            <td><textarea v-model="formData.observaciones.proyectos" class="textarea"></textarea></td>
-            <td><input type="file" class="file-input" /></td>
-          
-            <td><label for="tutorias">Número de grupos de tutorías asignados:</label></td>
-            <td><input type="number" id="tutorias" v-model.number="formData.tutorias" class="input" /></td>
-            <td><textarea v-model="formData.observaciones.tutorias" class="textarea"></textarea></td>
-            <td><input type="file" class="file-input" /></td>
-          
-            <td><label for="integradores">Número de proyectos integradores asignados:</label></td>
-            <td><input type="number" id="integradores" v-model.number="formData.integradores" class="input" /></td>
-            <td><textarea v-model="formData.observaciones.integradores" class="textarea"></textarea></td>
-            <td><input type="file" class="file-input" /></td> -->
+          <tr v-for="item in actividadesSemanales" :key="item.id_actividad">
+            <td>{{ item.descripcion }}</td>
+            <td><input type="number" :id="'valor-' + item.id_actividad"></td>
+            <td><input type="text" :id="'observacion-' + item.id_actividad"></td>
+            <td><input type="file" :id="'evidencia-' + item.id_actividad"></td>
           </tr>
-
         </tbody>
       </table>
 
@@ -90,6 +95,7 @@
     </form>
   </div>
 </template>
+
 
 
 <style scoped>

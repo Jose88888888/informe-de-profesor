@@ -26,6 +26,7 @@ const login = async () => {
     localStorage.setItem("userempleado", response.data.empleado);
     localStorage.setItem("userrol", response.data.rol.trim());
     localStorage.setItem('id_informe', response.data.id_informe);
+    localStorage.setItem('usercarrera', response.data.carrera);
     localStorage.setItem("access-token", response.data.token);
 
     // Añade esto después de recibir la respuesta

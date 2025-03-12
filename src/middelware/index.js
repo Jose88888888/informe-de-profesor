@@ -38,6 +38,15 @@ export function getUserType() {
 }
 
 /**
+ * Obtiene la carrera del usuario actual
+ * @returns {string} La carrera del usuario o una cadena vacía si no existe
+ */
+export function getUserCarrera() {
+    const carrera = localStorage.getItem("usercarrera");
+    return carrera || ""; // Devuelve una cadena vacía si no existe
+}
+
+/**
  * Función para cerrar sesión
  */
 export function logout() {
@@ -47,6 +56,7 @@ export function logout() {
     localStorage.removeItem("usercorreo");
     localStorage.removeItem("usernombre");
     localStorage.removeItem("userempleado");
+    localStorage.removeItem("usercarrera"); // Agregado para eliminar la carrera al cerrar sesión
     localStorage.removeItem("id_informe");
     
     // Redireccionar a la página de login
