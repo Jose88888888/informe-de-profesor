@@ -81,6 +81,7 @@ const logout = () => {
         <li><router-link to="/homeadmin">Dashboard</router-link></li>
         <li><router-link to="/adminuser">Gestión de usuarios</router-link></li>
         <li><router-link to="/adminacti">Gestión de actividades</router-link></li>
+        <li><router-link to="/admininforme">Historial de informes</router-link></li>
         <!-- Aquí agrega las demás rutas para administradores -->
         <li><a href="#" @click.prevent="logout">Cerrar Sesión</a></li>
       </ul>
@@ -93,7 +94,7 @@ const logout = () => {
 <style>
 
 #app {
-  background-image: url('/img/utz.png'); /* Ruta de la imagen */
+  background-image: url('/img/Logotipo.png'); /* Ruta de la imagen */
   background-size: cover; /* Ajusta la imagen para que cubra toda la pantalla */
   background-position: center;
   background-repeat: no-repeat;

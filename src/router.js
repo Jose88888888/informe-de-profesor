@@ -18,6 +18,7 @@ import HomeAdmin from './views/admin/homeadmin.vue'; // Asegúrate de crear este
 import adminuser from './views/admin/adminuser.vue';
 import adminacti from './views/admin/adminacti.vue';
 import Inicioinforme from './views/inicioinforme.vue';
+import admininforme from './views/admin/admininforme.vue';
 
 const routes = [
     { 
@@ -159,6 +160,20 @@ const routes = [
               }
             }
           },
+
+          {
+            path: '/admininforme',
+            name: 'admininforme',
+            component: () => import('./views/admin/admininforme.vue'),
+            beforeEnter: (to, from, next) => {
+              if (isActiveSession() && isAdmin()) {
+                next();
+              } else {
+                next('/');
+              }
+            }
+          },
+          
           
     // Ruta para página no encontrada
     {
