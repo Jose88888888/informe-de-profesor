@@ -2,6 +2,7 @@
 import { computed, ref, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 
+
 const router = useRouter();
 const route = useRoute();
 
@@ -61,6 +62,16 @@ const logout = () => {
 
 <template>
   <div>
+    <!-- Banner con logo y texto -->
+    <div class="header-container" v-if="isAuthenticated">
+      <div class="banner">
+        <img src="/img/Logotipo.png" alt="Logo" class="logo-img">
+      </div>
+      <div class="text">
+        <h1>Informe del profesor de tiempo completo</h1>
+      </div>
+    </div>
+
     <!-- Navbar para Profesores -->
     <nav class="navbar" v-if="isAuthenticated && isProfesor"> 
       <ul>
@@ -82,7 +93,6 @@ const logout = () => {
         <li><router-link to="/adminuser">Gestión de usuarios</router-link></li>
         <li><router-link to="/adminacti">Gestión de actividades</router-link></li>
         <li><router-link to="/admininforme">Historial de informes</router-link></li>
-        <!-- Aquí agrega las demás rutas para administradores -->
         <li><a href="#" @click.prevent="logout">Cerrar Sesión</a></li>
       </ul>
     </nav>
@@ -91,32 +101,66 @@ const logout = () => {
     <router-view></router-view>
   </div>
 </template>
-<style>
 
+<style>
 #app {
-  background-image: url('/img/Logotipo.png'); /* Ruta de la imagen */
-  background-size: cover; /* Ajusta la imagen para que cubra toda la pantalla */
+  background: #c2c2c2;
+  background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-attachment: fixed; /* Hace que el fondo permanezca fijo al hacer scroll */
-  min-height: 150vh; /* Asegura que siempre cubra toda la pantalla */
+  background-attachment: fixed;
+  min-height: 150vh;
   display: flex;
   flex-direction: column;
 }
 
-.navbar ul {
+/* Estilos para el contenedor del header */
+.header-container {
+  display: flex;
+  align-items: center;
+  background-color: #c2c2c2;
+  padding: 10px 20px;
+}
 
+/* Estilos para el banner */
+.banner {
+  display: flex;
+  justify-content: left;
+}
+
+.logo-img {
+  max-height: 100px;
+  width: auto;
+}
+
+/* Estilos para el texto */
+.text {
+  flex-grow: 1;
+  text-align: center;
+}
+
+.text h1 {
+  margin: 0;
+  font-size: 24px;
+  text-transform: uppercase;
+  color: #000;
+}
+
+/* Estilos para el navbar */
+.navbar ul {
   display: flex;
   list-style: none;
-  background: #333;
+  background: #000000;
   padding: 10px;
+  margin: 0;
 }
+
 .navbar ul li {
   margin: 0 10px;
 }
+
 .navbar ul li a {
   color: white;
   text-decoration: none;
 }
 </style>
-

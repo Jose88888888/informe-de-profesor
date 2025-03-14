@@ -2,21 +2,52 @@
   <div class="container">
     <h2 class="title">Reportes de Usuarios</h2>
     
-    <!-- Filtro por carrera -->
-    <div class="filter-section">
-      <label for="carrera" class="filter-label">Filtrar por carrera:</label>
-      <select 
-        id="carrera"
-        v-model="selectedCareer" 
-        class="filter-select"
-      >
-        <option value="">Todas</option>
-        <option v-for="carrera in uniqueCareers" :key="carrera" :value="carrera">{{ carrera }}</option>
-      </select>
+    <!-- Sección de filtros y acciones administrativas -->
+    <div class="admin-controls">
+      <!-- Filtro por carrera existente -->
+      <div class="filter-section">
+        <label for="carrera" class="filter-label">Filtrar por carrera:</label>
+        <select 
+          id="carrera"
+          v-model="selectedCareer" 
+          class="filter-select"
+        >
+          <option value="">Todas</option>
+          <option v-for="carrera in uniqueCareers" :key="carrera" :value="carrera">{{ carrera }}</option>
+        </select>
+      </div>
+      
+      <!-- Nuevo selector de cuatrimestre y botón para finalizar -->
+      <div class="admin-actions">
+        <div class="quarter-selector">
+          <label for="cuatrimestre" class="filter-label">Seleccionar cuatrimestre:</label>
+          <select 
+            id="cuatrimestre"
+            v-model="selectedQuarter" 
+            class="filter-select"
+          >
+            <option value="">Seleccionar...</option>
+            <option v-for="cuatrimestre in uniqueQuarters" :key="cuatrimestre" :value="cuatrimestre">{{ cuatrimestre }}</option>
+          </select>
+        </div>
+        
+        <button 
+          @click="finalizarCuatrimestre" 
+          class="btn-primary"
+          :disabled="!selectedQuarter || isProcessing"
+        >
+          {{ isProcessing ? 'Procesando...' : 'Finalizar Cuatrimestre' }}
+        </button>
+      </div>
     </div>
     
     <!-- Estado de carga -->
     <div v-if="isLoading" class="loading">Cargando reportes...</div>
+    
+    <!-- Mensaje de éxito -->
+    <div v-if="successMessage" class="success-message">
+      {{ successMessage }}
+    </div>
     
     <!-- Mensaje de error -->
     <div v-if="error" class="error-message">
@@ -39,6 +70,7 @@
             <th>Fecha</th>
             <th>Parcial</th>
             <th>Cuatrimestre</th>
+            <th>Estado</th>
             <th>Acciones</th>
           </tr>
         </thead>
@@ -50,6 +82,7 @@
             <td>{{ formatDate(informe.fecha) }}</td>
             <td>{{ informe.parcial }}</td>
             <td>{{ informe.cuatrimestre }}</td>
+            <td>{{ informe.status }}</td>
             <td>
               <button 
                 @click="generarPDFFormateado(informe)" 
@@ -87,6 +120,24 @@
         </button>
       </div>
     </div>
+    
+    <!-- Modal de confirmación -->
+    <div v-if="showConfirmModal" class="modal-overlay">
+      <div class="modal-container">
+        <div class="modal-header">
+          <h3>Confirmar Acción</h3>
+        </div>
+        <div class="modal-body">
+          <p>¿Estás seguro que deseas finalizar el cuatrimestre <strong>{{ selectedQuarter }}</strong>?</p>
+          <p>Esta acción cambiará el estado de todos los informes de este cuatrimestre a "finalizado por admin" y no se podrá revertir.</p>
+          <p><strong>Total de informes afectados: {{ informesToFinalize.length }}</strong></p>
+        </div>
+        <div class="modal-footer">
+          <button @click="showConfirmModal = false" class="btn-secondary">Cancelar</button>
+          <button @click="confirmarFinalizarCuatrimestre" class="btn-danger">Confirmar Finalización</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -100,10 +151,14 @@ import axios from 'axios';
 const reportes = ref([]);
 const isLoading = ref(true);
 const error = ref(null);
+const successMessage = ref(null);
 const selectedCareer = ref('');
+const selectedQuarter = ref('');
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
 const usuarioActual = ref(localStorage.getItem("usernombre") || "Usuario Desconocido");
+const isProcessing = ref(false);
+const showConfirmModal = ref(false);
 
 // Cargar datos
 onMounted(async () => {
@@ -113,6 +168,7 @@ onMounted(async () => {
 async function cargarDatos() {
   isLoading.value = true;
   error.value = null;
+  successMessage.value = null;
   
   try {
     const response = await axios.get("http://localhost:3000/api/select/actividades/vista_informe_completo_finalizado");
@@ -129,6 +185,11 @@ async function cargarDatos() {
 // Obtener lista única de carreras
 const uniqueCareers = computed(() => {
   return [...new Set(reportes.value.map(r => r.carrera))];
+});
+
+// Obtener lista única de cuatrimestres
+const uniqueQuarters = computed(() => {
+  return [...new Set(reportes.value.map(r => r.cuatrimestre))].sort();
 });
 
 // Filtrar reportes solo por carrera
@@ -211,6 +272,14 @@ const groupedReports = computed(() => {
   
   console.log("Informes agrupados y procesados:", grouped);
   return grouped;
+});
+
+// Informes a finalizar (para el modal de confirmación)
+const informesToFinalize = computed(() => {
+  if (!selectedQuarter.value) return [];
+  return groupedReports.value.filter(informe => 
+    informe.cuatrimestre === selectedQuarter.value
+  );
 });
 
 // Paginación para informes agrupados
@@ -305,7 +374,62 @@ function generarPDFFormateado(informe) {
     alert('Ocurrió un error al generar el PDF. Revisa la consola para más detalles.');
   }
 }
+
+// NUEVAS FUNCIONES PARA FINALIZAR CUATRIMESTRE
+
+// Mostrar modal de confirmación antes de finalizar cuatrimestre
+function finalizarCuatrimestre() {
+  if (!selectedQuarter.value) {
+    error.value = "Debe seleccionar un cuatrimestre para finalizar.";
+    return;
+  }
+  
+  // Mostrar modal de confirmación
+  showConfirmModal.value = true;
+}
+
+// Finalizar cuatrimestre (después de confirmación)
+async function confirmarFinalizarCuatrimestre() {
+  isProcessing.value = true;
+  error.value = null;
+  successMessage.value = null;
+  
+  try {
+    // Obtener IDs de informes que pertenecen al cuatrimestre seleccionado
+    const informesIds = informesToFinalize.value.map(informe => informe.id_informe);
+    
+    if (informesIds.length === 0) {
+      error.value = "No hay informes para finalizar en este cuatrimestre.";
+      showConfirmModal.value = false;
+      isProcessing.value = false;
+      return;
+    }
+    
+    // Realizar la petición para actualizar el estado de los informes
+    const response = await axios.post("http://localhost:3000/api/update/informes/finalizar-cuatrimestre", {
+      cuatrimestre: selectedQuarter.value,
+      nuevoEstado: "finalizado por admin",
+      informesIds: informesIds
+    });
+    
+    console.log("Respuesta del servidor:", response.data);
+    
+    // Mostrar mensaje de éxito
+    successMessage.value = `Se han finalizado ${informesIds.length} informes del cuatrimestre ${selectedQuarter.value}.`;
+    
+    // Recargar datos
+    await cargarDatos();
+    
+  } catch (err) {
+    console.error("Error al finalizar cuatrimestre:", err);
+    error.value = "Ocurrió un error al finalizar el cuatrimestre. Por favor, intente nuevamente.";
+  } finally {
+    isProcessing.value = false;
+    showConfirmModal.value = false;
+  }
+}
 </script>
+
 
 <style scoped>
 .container {
@@ -315,9 +439,9 @@ function generarPDFFormateado(informe) {
 }
 
 .title {
-  font-size: 1.8rem;
+  text-align: center;
   margin-bottom: 20px;
-  color: #333;
+  color: #971B2F;
 }
 
 .filter-section {
@@ -374,20 +498,20 @@ function generarPDFFormateado(informe) {
 .form-table th, .form-table td {
   padding: 12px 15px;
   text-align: left;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #a9a9a9;
 }
 
 .form-table th {
-  background-color: #f5f5f5;
+  background-color: #a9a9a9;
   font-weight: 600;
 }
 
 .form-table tr:hover {
-  background-color: #f9f9f9;
+  background-color: #a9a9a9;
 }
 
 .btn-download {
-  background-color: #2980b9;
+  background-color: #00AB84;
   color: white;
   border: none;
   padding: 6px 12px;
@@ -398,7 +522,7 @@ function generarPDFFormateado(informe) {
 }
 
 .btn-download:hover {
-  background-color: #1c638e;
+  background-color: #00AB84;
 }
 
 .btn-secondary {
@@ -436,5 +560,114 @@ function generarPDFFormateado(informe) {
 .pagination-buttons {
   display: flex;
   gap: 10px;
+}
+/* Nuevos estilos para la funcionalidad de finalizar cuatrimestre */
+.admin-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 15px;
+}
+
+.admin-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 15px;
+}
+
+.quarter-selector {
+  display: flex;
+  flex-direction: column;
+}
+
+.btn-primary {
+  background-color: #00AB84;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: #00AB84;
+}
+
+.btn-primary:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+}
+
+.success-message {
+  background-color: #d1fae5;
+  border-left: 4px solid #10b981;
+  color: #065f46;
+  padding: 12px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+}
+
+.btn-danger {
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-danger:hover {
+  background-color: #b91c1c;
+}
+
+/* Modal de confirmación */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-container {
+  background-color: white;
+  border-radius: 6px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.modal-body {
+  padding: 16px;
+}
+
+.modal-footer {
+  padding: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  border-top: 1px solid #e5e7eb;
 }
 </style>

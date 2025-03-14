@@ -62,7 +62,7 @@ function resetForm() {
 
 <template>
   <div class="container">
-    <h2 class="title">Semanales</h2>
+    <h2 class="title">Extraordinario</h2>
     <form @submit.prevent="submitForm" class="form">
       <table class="form-table">
         <thead>

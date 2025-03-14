@@ -285,7 +285,7 @@ onMounted(obtenerActividades);
 .titulo {
   text-align: center;
   margin-bottom: 30px;
-  color: #333;
+  color: #971B2F; 
 }
 
 .alerta {
@@ -323,23 +323,24 @@ onMounted(obtenerActividades);
 }
 
 .tabla th,
+.tabla th,
 .tabla td {
   padding: 12px 15px;
-  border: 1px solid #ddd;
+  border: 1px solid #a9a9a9;
   text-align: left;
 }
 
 .tabla th {
-  background-color: #f8f9fa;
+  background-color: #a9a9a9;
   font-weight: bold;
 }
 
 .tabla tr:nth-child(even) {
-  background-color: #f2f2f2;
+  background-color: #a9a9a9;
 }
 
 .tabla tr:hover {
-  background-color: #e9ecef;
+  background-color: #a9a9a9;
 }
 
 .acciones-celda {
@@ -349,7 +350,7 @@ onMounted(obtenerActividades);
 
 .sin-datos {
   text-align: center;
-  color: #6c757d;
+  color: #037503;
   font-style: italic;
 }
 
@@ -363,12 +364,12 @@ onMounted(obtenerActividades);
 }
 
 .boton-primario {
-  background-color: #007bff;
+  background-color: #00AB84;
   color: white;
 }
 
 .boton-primario:hover {
-  background-color: #0069d9;
+  background-color: #00AB84;
 }
 
 .boton-secundario {
@@ -381,14 +382,13 @@ onMounted(obtenerActividades);
 }
 
 .boton-editar {
-  background-color: #ffc107;
-  color: black;
+  background-color: #4BC8A8; /* Versión clara de #00AB84 */
+  color: white; /* Cambié a blanco para mejor contraste */
 }
 
 .boton-editar:hover {
-  background-color: #e0a800;
+  background-color: #00AB84; /* El color original al hacer hover */
 }
-
 .boton-eliminar {
   background-color: #dc3545;
   color: white;
@@ -426,22 +426,22 @@ onMounted(obtenerActividades);
 }
 
 .tipo-inicial {
-  background-color: #17a2b8;
+  background-color: #ff0000;
   color: white;
 }
 
 .tipo-especial {
-  background-color: #6f42c1;
+  background-color: #e61919;
   color: white;
 }
 
 .tipo-semanal {
-  background-color: #28a745;
+  background-color: #ec5353;
   color: white;
 }
 
 .tipo-otros {
-  background-color: #6c757d;
+  background-color: #b81414;
   color: white;
 }
 

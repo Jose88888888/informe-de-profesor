@@ -291,7 +291,7 @@ onMounted(obtenerUsuarios);
 .titulo {
   text-align: center;
   margin-bottom: 30px;
-  color: #333;
+  color: #971B2F;
 }
 
 .alerta {
@@ -331,21 +331,21 @@ onMounted(obtenerUsuarios);
 .tabla th,
 .tabla td {
   padding: 12px 15px;
-  border: 1px solid #ddd;
+  border: 1px solid #a9a9a9;
   text-align: left;
 }
 
 .tabla th {
-  background-color: #f8f9fa;
+  background-color: #a9a9a9;
   font-weight: bold;
 }
 
 .tabla tr:nth-child(even) {
-  background-color: #f2f2f2;
+  background-color: #a9a9a9;
 }
 
 .tabla tr:hover {
-  background-color: #e9ecef;
+  background-color: #a9a9a9;
 }
 
 .acciones-celda {
@@ -369,12 +369,12 @@ onMounted(obtenerUsuarios);
 }
 
 .boton-primario {
-  background-color: #007bff;
+  background-color: #00AB84;
   color: white;
 }
 
 .boton-primario:hover {
-  background-color: #0069d9;
+  background-color: #00AB84;
 }
 
 .boton-secundario {
@@ -387,12 +387,12 @@ onMounted(obtenerUsuarios);
 }
 
 .boton-editar {
-  background-color: #ffc107;
-  color: black;
+  background-color: #4BC8A8; /* Versión clara de #00AB84 */
+  color: white; /* Cambié a blanco para mejor contraste */
 }
 
 .boton-editar:hover {
-  background-color: #e0a800;
+  background-color: #00AB84; /* El color original al hacer hover */
 }
 
 .boton-eliminar {
