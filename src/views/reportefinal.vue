@@ -23,8 +23,15 @@ const mostrarDatosCompletos = computed(() => {
 
 async function cargarDatos() {
     try {
-        // Cargar primera vista: vista_informe_inicial (siempre se carga)
-        const responseInicial = await axios.get("http://localhost:3000/api/select/actividades/vista_informe_inicial");
+        // Obtener el id_usuario del localStorage
+        const id_usuario = localStorage.getItem("userid"); // Asumiendo que guardas el ID del usuario en localStorage
+        
+        // Cargar primera vista con filtro por id_usuario
+        const responseInicial = await axios.get(
+            `http://localhost:3000/api/select/actividades/vista_informe_inicial`, 
+            { params: { id_usuario } }
+        );
+        
         const datosFormateados = responseInicial.data.map(item => ({
             ...item,
             nombre_usuario: nombreUsuario.value
