@@ -23,8 +23,8 @@ const mostrarDatosCompletos = computed(() => {
 
 async function cargarDatos() {
     try {
-        // Obtener el id_usuario del localStorage
-        const id_usuario = localStorage.getItem("userid"); // Asumiendo que guardas el ID del usuario en localStorage
+        // Obtener el id_usuario del localStorage una sola vez
+        const id_usuario = localStorage.getItem("userid");
         
         // Cargar primera vista con filtro por id_usuario
         const responseInicial = await axios.get(
@@ -43,15 +43,20 @@ async function cargarDatos() {
         cargandoInicial.value = false;
         console.log("Datos iniciales obtenidos:", datosInicial.value);
 
-        // Cargar segunda vista: vista_informe_completo
-        const responseCompleto = await axios.get("http://localhost:3000/api/select/actividades/vista_informe_completo");
+        // Cargar segunda vista: vista_informe_completo con el mismo id_usuario
+        const responseCompleto = await axios.get(
+            "http://localhost:3000/api/select/actividades/vista_informe_completo",
+            { params: { id_usuario } }
+        );
+
         datosCompleto.value = responseCompleto.data.map(item => ({
             ...item,
             nombre_usuario: nombreUsuario.value
         }));
+
         cargandoCompleto.value = false;
         console.log("Datos completos obtenidos:", datosCompleto.value);
-        
+
         // Si hay datos, obtener el status actual del informe
         if (datosCompleto.value.length > 0 && datosCompleto.value[0].status) {
             reporteStatus.value = datosCompleto.value[0].status;
@@ -104,7 +109,7 @@ async function finalizarInforme() {
         alert("El informe ha sido finalizado correctamente");
         
         // Generar PDF automáticamente después de finalizar
-        generarPDF();
+        generarPDFFormateado();
     } catch (error) {
         console.error("Error al finalizar el informe:", error);
         alert("Ocurrió un error al finalizar el informe");

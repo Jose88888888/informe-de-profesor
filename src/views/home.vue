@@ -4,13 +4,13 @@
     <p>
       Si es tu primer inicio, 
       <router-link to="/inicioinforme" class="btn-inicio">
-        ir a la opción de "inicio de cuatrimestre"
+        ir a la opción de "informe parcial"
       </router-link>
     </p>
     <p>
       Si no tienes informes activos,
       <router-link to="/inicioinforme" class="btn-inicio">
-        ir a "inicio de cuatrimestre"
+        ir a "informe parcial"
       </router-link>
     </p>
     <p>Selecciona una opción del menú.</p>

@@ -83,8 +83,8 @@ function resetForm() {
         </tbody>
       </table>
       <div class="buttons">
-        <button type="submit" class="btn-submit">Enviar</button>
         <button type="button" @click="resetForm" class="btn-reset">Limpiar</button>
+        <button type="submit" class="btn-submit">Enviar</button>
       </div>
     </form>
   </div>

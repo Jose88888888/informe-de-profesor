@@ -67,13 +67,13 @@ function resetForm() {
 
 <template>
   <div class="container">
-    <h2 class="title">Actividades Semanales</h2>
+    <h2 class="title">Actividades</h2>
     <form @submit.prevent="submitForm" class="form">
       <table class="form-table">
         <thead>
           <tr>
             <th>Actividad</th>
-            <th>Horas/Días</th>
+            <th>Horas</th>
             <th>Observaciones</th>
             <th>Evidencia</th>
           </tr>
@@ -89,8 +89,8 @@ function resetForm() {
       </table>
 
       <div class="buttons">
-        <button type="submit" class="btn-submit">Enviar</button>
         <button type="button" @click="resetForm" class="btn-reset">Limpiar</button>
+        <button type="submit" class="btn-submit">Enviar</button>
       </div>
     </form>
   </div>

@@ -1,47 +1,45 @@
-<script setup>
-    import { ref } from 'vue';
-    import axios from 'axios';
+// Hay dos posibles soluciones, dependiendo de cómo esté estructurado tu código:
 
-    const variable=ref([]);
+// SOLUCIÓN 1: Si quieres usar la función generarPDFFormateado que ya tienes
+// Modifica la función finalizarInforme en reportefinal.vue para que llame a generarPDFFormateado en lugar de generarPDF
 
-    async function conect(){
-        const options = {
-            method: 'GET',
-            url: "http://localhost:3000/api/actividades/:table/:tipo",
-            headers: {
-            'Content-Type': 'application/json',
-            },
-        }
-        try {
-            const response = await axios.request(options)
-            variable.value=response.data;
-            /* response.data.forEach(element => {
-                console.log(element);
-            }); */
-            return response.data
-        }
-        catch (error) {
-            console.error(error)
-            return [{}]
-        }
-    }
-
-    conect();
-</script>
-<template>
-    <tabla>
-        <tr>
-            <th style="border:black solid 1px">campo</th>
-            <th style="border:black solid 1px">hora/dia</th>
-            <th style="border:black solid 1px">observaciones</th>
-            <th style="border:black solid 1px">archivo</th>
-        </tr>
-        <tr v-for="item in variable">
-            <th style="border:black solid 1px">{{ item.descripcion }}</th>
-            <th style="border:black solid 1px"><input type="text"/></th>
-            <th style="border:black solid 1px"><input type="text"/></th>
-            <th style="border:black solid 1px"><input type="file"/></th>
-        </tr>
-    </tabla>
+async function finalizarInforme() {
+  try {
+    // Lógica existente para finalizar el informe
+    // ...
     
-</template>
+    // Cambiar esta línea:
+    // generarPDF(); // Esta línea está causando el error
+    
+    // Por esta:
+    generarPDFFormateado(informeData); // Usa la función que ya está definida
+    
+    // Resto del código...
+  } catch (error) {
+    console.error("Error al finalizar el informe:", error);
+    // Manejo de errores...
+  }
+}
+
+// SOLUCIÓN 2: Si necesitas ambas funciones, añade la función generarPDF al archivo
+
+// Añade esta función en tu archivo reportefinal.vue
+function generarPDF() {
+  if (datosCompleto.value.length === 0) {
+    alert('No hay datos para generar el PDF');
+    return;
+  }
+
+  try {
+    // Usamos la información del informe actual
+    const informe = datosCompleto.value[0];
+    
+    // Llamamos a la función formateada con los datos necesarios
+    generarPDFFormateado(informe);
+    
+    console.log('PDF generado correctamente');
+  } catch (error) {
+    console.error('Error al generar PDF:', error);
+    alert('Ocurrió un error al generar el PDF');
+  }
+}
