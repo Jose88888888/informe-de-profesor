@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import axios from 'axios';
 
 // Variable para almacenar las actividades obtenidas desde la API
@@ -31,7 +31,6 @@ async function verificarRegistrosExistentes() {
     }
     
     try {
-        // Usamos el endpoint correcto y evitamos la caché
         const timestamp = new Date().getTime();
         const response = await axios.get(`http://localhost:3000/api/informeactividad/informe/${id_informe}?_t=${timestamp}`, {
             headers: {
@@ -43,7 +42,6 @@ async function verificarRegistrosExistentes() {
         
         console.log("Registros existentes:", response.data);
         
-        // Almacenar las IDs de las actividades que ya tienen registros
         if (response.data && response.data.length > 0) {
             actividadesInsertadas.value = response.data.map(item => item.id_actividad);
             console.log("Actividades ya insertadas:", actividadesInsertadas.value);
@@ -54,13 +52,8 @@ async function verificarRegistrosExistentes() {
                 const observacionElement = document.getElementById(`observacion-${item.id_actividad}`);
                 const evidenciaLabelElement = document.getElementById(`evidencia-label-${item.id_actividad}`);
                 
-                if (valorElement) {
-                    valorElement.value = item.valor || '';
-                }
-                
-                if (observacionElement) {
-                    observacionElement.value = item.observacion || '';
-                }
+                if (valorElement) valorElement.value = item.valor || '';
+                if (observacionElement) observacionElement.value = item.observacion || '';
                 
                 if (evidenciaLabelElement && item.evidencia) {
                     evidenciaLabelElement.textContent = `Archivo actual: ${item.evidencia}`;
@@ -75,27 +68,21 @@ async function verificarRegistrosExistentes() {
     }
 }
 
-// Llamar a la función al cargar el componente
-obtenerActividades();
-
 // Función para manejar el envío del formulario
 async function submitForm() {
     const id_informe = localStorage.getItem("id_informe");
-
     if (!id_informe) {
         alert("Error: No se encontró el ID del informe. Inicia sesión nuevamente.");
         return;
     }
 
+    const submitButton = document.querySelector('.btn-submit');
     try {
-        // Deshabilitar el botón de envío para evitar múltiples envíos
-        const submitButton = document.querySelector('.btn-submit');
         if (submitButton) {
             submitButton.disabled = true;
             submitButton.textContent = 'Enviando...';
         }
 
-        // Procesar cada actividad individualmente
         for (const actividad of actividades.value) {
             const id_actividad = actividad.id_actividad;
             const valorElement = document.getElementById(`valor-${id_actividad}`);
@@ -106,87 +93,43 @@ async function submitForm() {
             const observacion = observacionElement ? observacionElement.value : null;
             const evidenciaFile = evidenciaElement && evidenciaElement.files.length > 0 ? evidenciaElement.files[0] : null;
             
-            // Determinar si es actualización o inserción
             const esActualizacion = actividadesInsertadas.value.includes(id_actividad);
-            console.log(`Actividad ${id_actividad} - Es actualización: ${esActualizacion}`);
             
-            // Preparar los datos comunes para ambos casos
             const formData = new FormData();
             formData.append('id_informe', id_informe);
             formData.append('id_actividad', id_actividad);
-            
-            if (valor !== null && valor !== '') {
-                formData.append('valor', parseInt(valor));
-            }
-            
-            if (observacion !== null && observacion !== '') {
-                formData.append('observacion', observacion);
-            }
+            formData.append('valor', valor !== null && valor !== '' ? parseInt(valor) : null);
+            formData.append('observacion', observacion !== null && observacion !== '' ? observacion : null);
             
             if (evidenciaFile) {
                 formData.append('evidencia', evidenciaFile);
             }
             
-            // Crear un objeto de datos para depuración
-            const datosEnviados = {
-                id_informe,
-                id_actividad,
-                valor: valor !== null && valor !== '' ? parseInt(valor) : null,
-                observacion: observacion !== null && observacion !== '' ? observacion : null,
-                evidencia: evidenciaFile ? evidenciaFile.name : null
-            };
-            
             try {
                 if (esActualizacion) {
-                    // ACTUALIZACIÓN: Usar el endpoint correcto
-                    console.log(`Actualizando actividad ${id_actividad}`, datosEnviados);
-                    
-                    // Evitar la caché añadiendo un timestamp
+                    // Actualización
                     const timestamp = new Date().getTime();
-                    const url = `http://localhost:3000/api/informeactividad/${id_informe}/${id_actividad}?_t=${timestamp}`;
-                    
-                    // Si hay archivo, usamos FormData, de lo contrario, probamos con JSON
-                    if (evidenciaFile) {
-                        const respuesta = await axios.put(url, formData, {
-                            headers: {
-                                'Content-Type': 'multipart/form-data'
-                            }
-                        });
-                        console.log(`Respuesta de actualización con archivo:`, respuesta.data);
-                    } else {
-                        const respuesta = await axios.put(url, datosEnviados);
-                        console.log(`Respuesta de actualización sin archivo:`, respuesta.data);
-                    }
-                    
+                    const url = `http://localhost:3000/api/update/informeactividad/${id_informe}/${id_actividad}?_t=${timestamp}`;
+                    await axios.put(url, formData, {
+                        headers: {
+                            'Content-Type': 'multipart/form-data'
+                        }
+                    });
                 } else {
-                    // INSERCIÓN: Usar el endpoint correcto
-                    console.log(`Insertando nueva actividad ${id_actividad}`, datosEnviados);
-                    
-                    // Si hay archivo, usamos FormData, de lo contrario, JSON
-                    let respuesta;
-                    if (evidenciaFile) {
-                        respuesta = await axios.post("http://localhost:3000/api/informeactividad/", formData, {
-                            headers: {
-                                'Content-Type': 'multipart/form-data'
-                            }
-                        });
-                    } else {
-                        respuesta = await axios.post("http://localhost:3000/api/informeactividad/", datosEnviados);
-                    }
-                    
-                    console.log(`Respuesta de inserción:`, respuesta.data);
-                    
-                    // Agregar a la lista de actividades insertadas
+                    // Inserción
+                    await axios.post("http://localhost:3000/api/informeactividad/", formData, {
+                        headers: {
+                            'Content-Type': 'multipart/form-data'
+                        }
+                    });
                     actividadesInsertadas.value.push(id_actividad);
                 }
             } catch (errorProcesamiento) {
                 console.error(`Error al procesar la actividad ${id_actividad}:`, errorProcesamiento);
-                console.error(`Detalle del error:`, errorProcesamiento.response ? errorProcesamiento.response.data : 'Sin detalles');
                 alert(`Error al procesar la actividad ${actividad.descripcion}: ${errorProcesamiento.message}`);
             }
         }
         
-        // Re-habilitar el botón de envío
         if (submitButton) {
             submitButton.disabled = false;
             submitButton.textContent = 'Enviar';
@@ -194,14 +137,11 @@ async function submitForm() {
         
         alert("Datos enviados correctamente");
         
-        // Forzar una recarga completa de los datos después de todas las actualizaciones
-        console.log("Recargando datos actualizados...");
         await verificarRegistrosExistentes();
+        
     } catch (error) {
         console.error("Error general al procesar datos:", error);
         
-        // Re-habilitar el botón de envío en caso de error
-        const submitButton = document.querySelector('.btn-submit');
         if (submitButton) {
             submitButton.disabled = false;
             submitButton.textContent = 'Enviar';
@@ -225,6 +165,9 @@ function resetForm() {
         if (evidenciaLabelElement) evidenciaLabelElement.textContent = "";
     });
 }
+
+// Llamar a la función al cargar el componente
+onMounted(obtenerActividades);
 </script>
 
 <template>
@@ -249,7 +192,6 @@ function resetForm() {
             <td>
               <div>
                 <input type="file" :id="'evidencia-' + item.id_actividad">
-                <!-- Etiqueta para mostrar el nombre del archivo existente -->
                 <small :id="'evidencia-label-' + item.id_actividad" class="file-label"></small>
               </div>
             </td>
@@ -272,7 +214,6 @@ function resetForm() {
     </form>
   </div>
 </template>
-
 
 
 <style scoped>

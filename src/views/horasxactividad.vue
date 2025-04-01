@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import axios from "axios";
 
 // Variable para almacenar las actividades semanales
@@ -10,45 +10,74 @@ async function obtenerActividadesSemanales() {
   try {
     const response = await axios.get("http://localhost:3000/api/actividades/actividades/semanal");
     actividadesSemanales.value = response.data;
-    console.log(actividadesSemanales.value);
   } catch (error) {
     console.error("Error al obtener actividades semanales:", error);
   }
 }
 
 // Llamar a la función al cargar el componente
-obtenerActividadesSemanales();
+onMounted(obtenerActividadesSemanales);
 
-// Función para manejar el envío del formulario
+// Función para manejar el envío del formulario con archivos
+// Función para manejar el envío del formulario con archivos
 async function submitForm() {
-  const id_informe = localStorage.getItem("id_informe"); // Obtener el id_informe almacenado
-
+  const id_informe = localStorage.getItem("id_informe");
+  // Obtener el número de empleado del localStorage
+  const empleadoNum = localStorage.getItem("usernombre");
+  
   if (!id_informe) {
     alert("Error: No se encontró el ID del informe. Inicia sesión nuevamente.");
     return;
   }
-
-  // Preparar los datos de cada actividad para enviarlos a la API
-  const datosAEnviar = actividadesSemanales.value.map((actividad) => {
-    const valor = document.getElementById(`valor-${actividad.id_actividad}`).value || null;
-    const observacion = document.getElementById(`observacion-${actividad.id_actividad}`).value || null;
-    const evidenciaFile = document.getElementById(`evidencia-${actividad.id_actividad}`).files[0];
-
-    return {
-      id_informe,
-      id_actividad: actividad.id_actividad,
-      valor: valor ? parseInt(valor) : null,
-      observacion,
-      evidencia: evidenciaFile ? evidenciaFile.name : null, // Solo se guarda el nombre del archivo en la BD
-    };
-  });
-
+  
   try {
-    // Enviar cada actividad de forma individual
-    for (const data of datosAEnviar) {
-      await axios.post("http://localhost:3000/api/informeactividad/", data);
+    // Procesar cada actividad
+    for (const actividad of actividadesSemanales.value) {
+      // Crear un FormData para cada actividad
+      const formData = new FormData();
+      
+      // Obtener los elementos del DOM
+      const valorInput = document.getElementById(`valor-${actividad.id_actividad}`);
+      const observacionInput = document.getElementById(`observacion-${actividad.id_actividad}`);
+      const evidenciaInput = document.getElementById(`evidencia-${actividad.id_actividad}`);
+      
+      // Agregar datos al FormData
+      formData.append('id_informe', id_informe);
+      formData.append('id_actividad', actividad.id_actividad);
+      
+      // Agregar el número de empleado al FormData
+      if (empleadoNum) {
+        formData.append('empleadoNum', empleadoNum);
+      }
+      
+      // Valor (opcional)
+      const valor = valorInput?.value;
+      if (valor) {
+        formData.append('valor', parseInt(valor));
+      }
+      
+      // Observación (opcional)
+      const observacion = observacionInput?.value;
+      if (observacion) {
+        formData.append('observacion', observacion);
+      }
+      
+      // Archivo de evidencia (opcional)
+      const evidenciaFile = evidenciaInput?.files[0];
+      if (evidenciaFile) {
+        formData.append('evidencia', evidenciaFile);
+      }
+      
+      // Enviar los datos al backend
+      await axios.post("http://localhost:3000/api/informeactividad/", formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
     }
+    
     alert("Datos enviados correctamente");
+    resetForm();
   } catch (error) {
     console.error("Error al insertar datos:", error);
     alert("Ocurrió un error al enviar los datos.");
@@ -58,9 +87,13 @@ async function submitForm() {
 // Función para limpiar el formulario
 function resetForm() {
   actividadesSemanales.value.forEach((actividad) => {
-    document.getElementById(`valor-${actividad.id_actividad}`).value = "";
-    document.getElementById(`observacion-${actividad.id_actividad}`).value = "";
-    document.getElementById(`evidencia-${actividad.id_actividad}`).value = "";
+    const valorInput = document.getElementById(`valor-${actividad.id_actividad}`);
+    const observacionInput = document.getElementById(`observacion-${actividad.id_actividad}`);
+    const evidenciaInput = document.getElementById(`evidencia-${actividad.id_actividad}`);
+
+    if (valorInput) valorInput.value = '';
+    if (observacionInput) observacionInput.value = '';
+    if (evidenciaInput) evidenciaInput.value = '';
   });
 }
 </script>

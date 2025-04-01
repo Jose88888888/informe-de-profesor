@@ -13,17 +13,74 @@ const mostrarModal = ref(false);
 const informeId = ref(localStorage.getItem("id_informe") || null);
 const reporteStatus = ref("");
 const actualizando = ref(false);
+
+// Nuevas referencias para preview de archivos
+const filePreviewVisible = ref(false);
+const currentFile = ref(null);
+const showTooltip = ref(false);
+const currentCuatrimestre = ref(null);
+
 // Guardar una copia de los datos iniciales para mostrarlos siempre
 const datosInicialesPersistentes = ref([]);
+const getCurrentCuatrimestre = () => {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    
+    if (month >= 1 && month <= 4) return `${year}E`;
+    if (month >= 5 && month <= 8) return `${year}M`;
+    return `${year}S`;
+}
 
 // Calculamos si debemos mostrar los datos completos basados en el status
 const mostrarDatosCompletos = computed(() => {
     return reporteStatus.value !== "Finalizado";
 });
 
+const fetchCurrentCuatrimestre = async () => {
+  try {
+    const response = await axios.get('/api/list-files');
+    currentCuatrimestre.value = response.data.cuatrimestre || getCurrentCuatrimestre();
+  } catch (error) {
+    console.error('Error al obtener el cuatrimestre:', error);
+    // Usar el cuatrimestre calculado localmente como respaldo
+    currentCuatrimestre.value = getCurrentCuatrimestre();
+  }
+};
+// Funciones para preview de archivos
+const openFilePreview = (fileName) => {
+  currentFile.value = fileName;
+  filePreviewVisible.value = true;
+};
+
+const closeFilePreview = () => {
+  filePreviewVisible.value = false;
+  currentFile.value = null;
+};
+
+// Verificar si es una imagen
+const isImage = (fileName) => {
+  if (!fileName) return false;
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+  return imageExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
+};
+
+// Verificar si es un PDF
+const isPDF = (fileName) => {
+  if (!fileName) return false;
+  return fileName.toLowerCase().endsWith('.pdf');
+};
+
+// Obtener URL del archivo
+const getFileUrl = computed(() => (fileName) => {
+  if (!fileName || !currentCuatrimestre.value) return '';
+  return `/upload/${currentCuatrimestre.value}/${fileName}`;
+});
+
+
+
 async function cargarDatos() {
     try {
-        // Obtener el id_usuario del localStorage una sola vez
         const id_usuario = localStorage.getItem("userid");
         
         // Cargar primera vista con filtro por id_usuario
@@ -38,10 +95,8 @@ async function cargarDatos() {
         }));
         
         datosInicial.value = datosFormateados;
-        // Guardamos una copia para mantenerla después de finalizar
         datosInicialesPersistentes.value = [...datosFormateados];
         cargandoInicial.value = false;
-        console.log("Datos iniciales obtenidos:", datosInicial.value);
 
         // Cargar segunda vista: vista_informe_completo con el mismo id_usuario
         const responseCompleto = await axios.get(
@@ -55,12 +110,14 @@ async function cargarDatos() {
         }));
 
         cargandoCompleto.value = false;
-        console.log("Datos completos obtenidos:", datosCompleto.value);
 
         // Si hay datos, obtener el status actual del informe
         if (datosCompleto.value.length > 0 && datosCompleto.value[0].status) {
             reporteStatus.value = datosCompleto.value[0].status;
         }
+
+        // Obtener el cuatrimestre actual
+        await fetchCurrentCuatrimestre();
     } catch (error) {
         console.error("Error al obtener datos:", error);
         alert("No se pudieron cargar los datos del informe");
@@ -90,12 +147,10 @@ async function finalizarInforme() {
     
     try {
         actualizando.value = true;
-        // Endpoint para actualizar el status del informe
         await axios.put(`http://localhost:3000/api/informes/actualizar/${informeId.value}`, {
             status: "Finalizado"
         });
         
-        // Actualizar el status en los datos locales
         reporteStatus.value = "Finalizado";
         if (datosCompleto.value.length > 0) {
             datosCompleto.value = datosCompleto.value.map(item => ({
@@ -108,7 +163,6 @@ async function finalizarInforme() {
         cerrarModal();
         alert("El informe ha sido finalizado correctamente");
         
-        // Generar PDF automáticamente después de finalizar
         generarPDFFormateado();
     } catch (error) {
         console.error("Error al finalizar el informe:", error);
@@ -129,7 +183,6 @@ function generarPDF() {
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
         
-        // Datos del informe
         const informe = datosCompleto.value[0];
         const fechaActual = new Date().toLocaleDateString('es-MX', {
             day: '2-digit',
@@ -137,27 +190,18 @@ function generarPDF() {
             year: 'numeric'
         });
         
-        // --------------- ENCABEZADO ---------------
-        
-        // Logo de la universidad (TAMAÑO REDUCIDO - mucho más pequeño)
         doc.addImage('/img/Logotipo.png', 'PNG', 14, 10, 30, 15);
         
-        // Título y fecha
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
         doc.text(`Tlajomulco de Zúñiga, ${fechaActual}`, pageWidth - 14, 20, { align: 'right' });
         doc.text("ASUNTO: Entrega de informe de horas por actividad " + informe.cuatrimestre, 14, 45);
         
-        
-        // Destinatario
         doc.setFont('helvetica', 'bold');
         doc.text("JULIO CÉSAR VILLASEÑOR BRACAMONTES", 14, 55);
         doc.text("DIRECTOR ACADÉMICO UTZMG", 14, 61);
         doc.text("PRESENTE.", 14, 67);
         
-        // --------------- CUERPO DEL DOCUMENTO ---------------
-        
-        // Texto introductorio
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
         const textoIntroductorio = "Aunado a un cordial en seguimiento al oficio UTZMG-DAC-3S.2-2024-[número de oficio], " +
@@ -167,7 +211,6 @@ function generarPDF() {
         const splitIntro = doc.splitTextToSize(textoIntroductorio, pageWidth - 28);
         doc.text(splitIntro, 14, 77);
         
-        // Sección 1: Datos iniciales
         let yPos = 95;
         
         doc.setFont('helvetica', 'bold');
@@ -175,7 +218,6 @@ function generarPDF() {
         doc.text("Informe Inicial", 14, yPos - 5);
         doc.setFont('helvetica', 'normal');
         
-        // Usamos los datos iniciales para crear la primera tabla
         const tablaDatosIniciales = datosInicial.value.map(item => [
             item.descripcion,
             item.valor_total.toString(),
@@ -193,7 +235,6 @@ function generarPDF() {
             margin: { left: 14, right: 14 }
         });
         
-        // Sección 2: Datos completos
         yPos = doc.lastAutoTable.finalY + 15;
         
         doc.setFont('helvetica', 'bold');
@@ -201,7 +242,6 @@ function generarPDF() {
         doc.text("Informe Completo", 14, yPos - 5);
         doc.setFont('helvetica', 'normal');
         
-        // Usamos los datos completos para crear la segunda tabla
         const tablaDatosCompletos = datosCompleto.value.map(item => [
             item.descripcion,
             item.valor_total.toString(),
@@ -219,14 +259,10 @@ function generarPDF() {
             margin: { left: 14, right: 14 }
         });
         
-        // --------------- PIE DEL DOCUMENTO ---------------
-        
-        // Texto de cierre
         yPos = doc.lastAutoTable.finalY + 15;
         doc.setFontSize(10);
         doc.text("Sin otro particular por el momento quedo atento si existe duda o comentario al respecto.", 14, yPos);
         
-        // Firma
         yPos += 20;
         doc.setFont('helvetica', 'bold');
         doc.text("ATENTAMENTE", pageWidth/2, yPos, { align: 'center' });
@@ -237,36 +273,28 @@ function generarPDF() {
         yPos += 10;
         doc.text("PROFESOR DE TIEMPO COMPLETO DE XXX", pageWidth/2, yPos, { align: 'center' });
         
-        // Logos institucionales en el pie de página (TAMAÑO MUY REDUCIDO)
         yPos = pageHeight - 25;
         
-        // Logos: SEP, UTP, JALISCO, INNOVACIÓN CIENCIA Y TECNOLOGÍA
-        const logoWidth = 25; // Ancho muy reducido
-        const logoHeight = 12; // Alto muy reducido
+        const logoWidth = 25;
+        const logoHeight = 12;
         const spacing = (pageWidth - (logoWidth * 4)) / 5;
         let xPos = spacing;
 
-        // Logo 1: SEP
         doc.addImage('/img/SEP.png', 'PNG', xPos, yPos, logoWidth, logoHeight);
         xPos += logoWidth + spacing;
         
-        // Logo 2: UTP
         doc.addImage('/img/utp.png', 'PNG', xPos, yPos, logoWidth, logoHeight);
         xPos += logoWidth + spacing;
         
-        // Logo 3: JALISCO
         doc.addImage('/img/jalisco.png', 'PNG', xPos, yPos, logoWidth, logoHeight);
         xPos += logoWidth + spacing;
         
-        // Logo 4: INNOVACIÓN CIENCIA Y TECNOLOGÍA
         doc.addImage('/img/inovacion.png', 'PNG', xPos, yPos, logoWidth, logoHeight);
         
-        // Agregar manejo de páginas múltiples si el contenido es muy extenso
         if (yPos > pageHeight - 20) {
             doc.addPage();
         }
         
-        // Guardar el PDF
         doc.save(`Reporte_Informe_${informe.cuatrimestre}_${informe.nombre_usuario || 'Profesor'}.pdf`);
         console.log('PDF generado correctamente');
     } catch (error) {
@@ -279,7 +307,6 @@ async function actualizarDato(item) {
     try {
         actualizando.value = true;
         
-        // Aquí puedes implementar la llamada a la API para actualizar los datos
         await axios.put(`http://localhost:3000/api/actividades/actualizar/${item.id_actividad}`, {
             evidencias: item.evidencias,
             observaciones: item.observaciones
@@ -318,12 +345,10 @@ onMounted(async () => {
       </button>
     </div>
     
-    <!-- Estado del reporte -->
     <div class="status-badge" :class="{'status-finalizado': reporteStatus === 'Finalizado'}">
       Estado: {{ reporteStatus || 'Activo' }}
     </div>
     
-    <!-- Sección de Informe Inicial (siempre visible) -->
     <div class="report-section">
       <h3 class="section-title">Informe Inicial</h3>
       <div v-if="cargandoInicial" class="loading">Cargando datos iniciales...</div>
@@ -343,7 +368,19 @@ onMounted(async () => {
               <td>{{ item.id_informe || 'N/A' }}</td>
               <td>{{ item.descripcion }}</td>
               <td>{{ item.valor_total }}</td>
-              <td>{{ item.evidencias || 'Sin evidencias' }}</td>
+              <td>
+                <span 
+                  v-if="item.evidencias"
+                  class="file-preview-link" 
+                  @click="openFilePreview(item.evidencias)"
+                  @mouseover="showTooltip = true"
+                  @mouseleave="showTooltip = true"
+                >
+                  {{ item.evidencias }}
+                  <span v-if="showTooltip" class="tooltip">Clic para ver archivo</span>
+                </span>
+                <span v-else>Sin evidencias</span>
+              </td>
               <td>{{ item.observaciones || 'Sin observaciones' }}</td>
             </tr>
           </tbody>
@@ -351,7 +388,6 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- Sección de Informe Completo (solo visible si no está finalizado) -->
     <div v-if="mostrarDatosCompletos" class="report-section">
       <h3 class="section-title">Informe Completo</h3>
       <div v-if="cargandoCompleto" class="loading">Cargando datos completos...</div>
@@ -371,7 +407,19 @@ onMounted(async () => {
               <td>{{ item.id_informe || 'N/A' }}</td>
               <td>{{ item.descripcion }}</td>
               <td>{{ item.valor_total }}</td>
-              <td>{{ item.evidencias || 'Sin evidencias' }}</td>
+              <td>
+                <span 
+                  v-if="item.evidencias"
+                  class="file-preview-link" 
+                  @click="openFilePreview(item.evidencias)"
+                  @mouseover="showTooltip = true"
+                  @mouseleave="showTooltip = false"
+                >
+                  {{ item.evidencias }}
+                  <span v-if="showTooltip" class="tooltip">Clic para ver archivo</span>
+                </span>
+                <span v-else>Sin evidencias</span>
+              </td>
               <td>{{ item.observaciones || 'Sin observaciones' }}</td>
             </tr>
           </tbody>
@@ -379,7 +427,6 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- Detalles del informe (siempre visibles) -->
     <div v-if="datosCompleto.length > 0" class="informe-details">
       <h3>Detalles del Informe</h3>
       <p>ID Informe: {{ datosCompleto[0].id_informe || 'N/A' }}</p>
@@ -389,9 +436,33 @@ onMounted(async () => {
       <p>Fecha: {{ new Date(datosCompleto[0].fecha).toLocaleDateString() }}</p>
       <p>Estado: {{ datosCompleto[0].status }}</p>
     </div>
+    
+    <div v-if="filePreviewVisible" class="file-preview-modal" @click.self="closeFilePreview">
+      <div class="modal-content">
+        <span class="close-button" @click="closeFilePreview">&times;</span>
+        <div class="preview-container">
+          <img 
+            v-if="isImage(currentFile)" 
+            :src="getFileUrl(currentFile)" 
+            alt="Vista previa" 
+            class="preview-image"
+          />
+          <iframe 
+            v-else-if="isPDF(currentFile)"
+            :src="getFileUrl(currentFile)" 
+            class="preview-iframe"
+          ></iframe>
+          <div v-else class="download-container">
+            <p>Este archivo no se puede previsualizar</p>
+            <a :href="getFileUrl(currentFile)" download class="download-button">
+              Descargar Archivo
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   
-  <!-- Modal de confirmación -->
   <div v-if="mostrarModal" class="modal-overlay">
     <div class="modal-container">
       <div class="modal-header">
@@ -587,4 +658,86 @@ onMounted(async () => {
   justify-content: flex-end;
   gap: 10px;
 }
+
+
+/* Todos los estilos previos más los siguientes: */
+.file-preview-link {
+  cursor: pointer;
+  color: blue;
+  text-decoration: underline;
+  position: relative;
+}
+
+.file-preview-link:hover {
+  color: darkblue;
+}
+
+.tooltip {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: black;
+  color: white;
+  padding: 5px;
+  border-radius: 3px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.file-preview-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 80%;
+  max-height: 80%;
+  position: relative;
+}
+
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.preview-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.preview-image, .preview-iframe {
+  max-width: 100%;
+  max-height: 70vh;
+}
+
+.download-container {
+  text-align: center;
+}
+
+.download-button {
+  display: inline-block;
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  text-decoration: none;
+  border-radius: 5px;
+  margin-top: 10px;
+}
+
 </style>

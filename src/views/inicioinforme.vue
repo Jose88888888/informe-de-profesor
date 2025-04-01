@@ -17,7 +17,7 @@
         </div>
       </div>
       <div class="form-group">
-        <label for="parcial">Parcial:</label>
+        <label for="parcial">Periodo:</label>
         <input 
           type="number" 
           id="parcial" 

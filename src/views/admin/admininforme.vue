@@ -16,6 +16,23 @@
             <option v-for="carrera in uniqueCareers" :key="carrera" :value="carrera">{{ carrera }}</option>
           </select>
         </div>
+
+        
+
+       <!-- En la sección de admin-actions-->
+  <div class="period-selector">
+    <label for="periodos" class="filter-label">Seleccionar período:</label>
+    <select 
+      id="periodos"
+      v-model="selectedPeriod" 
+      class="filter-select"
+    >
+      <option value="">Todos</option>
+      <option v-for="periodo in uniquePeriodos" :key="periodo" :value="periodo">
+        {{ periodo }}
+      </option>
+    </select>
+  </div>
         
         <!-- Nuevo selector de cuatrimestre y botón para finalizar -->
         <div class="admin-actions">
@@ -68,7 +85,7 @@
               <th>Usuario</th>
               <th>Carrera</th>
               <th>Fecha</th>
-              <th>Parcial</th>
+              <th>Periodo</th>
               <th>Cuatrimestre</th>
               <th>Estado</th>
               <th>Acciones</th>
@@ -156,15 +173,20 @@
   const selectedQuarter = ref('');
   const currentPage = ref(1);
   const itemsPerPage = ref(10);
+  const selectedPeriod = ref('');
   const usuarioActual = ref(localStorage.getItem("usernombre") || "Usuario Desconocido");
   const isProcessing = ref(false);
   const showConfirmModal = ref(false);
+  const errorSeleccionPeriodos = ref('');
+
+  
 
   // Cargar datos
   onMounted(async () => {
     await cargarDatos();
   });
 
+  
   async function cargarDatos() {
     isLoading.value = true;
     error.value = null;
@@ -192,22 +214,56 @@
     return [...new Set(reportes.value.map(r => r.cuatrimestre))].sort();
   });
 
-  // Filtrar reportes solo por carrera
-  const filteredReports = computed(() => {
-    let filtered = reportes.value;
-    
-    // Filtrar por carrera
-    if (selectedCareer.value) {
-      filtered = filtered.filter(r => r.carrera === selectedCareer.value);
-    }
-    
-    // Ordenar por fecha (más reciente primero)
-    filtered = [...filtered].sort((a, b) => {
-      return new Date(b.fecha) - new Date(a.fecha);
-    });
-    
-    return filtered;
+
+ // Método para validar selección de períodos
+const validarSeleccionPeriodos = () => {
+  if (periodosSeleccionados.value.length > 3) {
+    // Eliminar el último período seleccionado si se superan 3
+    periodosSeleccionados.value = periodosSeleccionados.value.slice(0, 3)
+    errorSeleccionPeriodos.value = 'Solo puedes seleccionar máximo 3 períodos'
+  } else {
+    errorSeleccionPeriodos.value = ''
+  }
+}
+const uniquePeriodos = computed(() => {
+  return [...new Set(reportes.value.map(r => r.parcial))].sort();
+});
+
+// Modificar el filtrado de reportes para incluir filtro de períodos
+const filteredReports = computed(() => {
+  let filtered = reportes.value;
+  
+  // Filtrar por carrera
+  if (selectedCareer.value) {
+    filtered = filtered.filter(r => r.carrera === selectedCareer.value);
+  }
+  
+  // Filtrar por cuatrimestre
+  if (selectedQuarter.value) {
+    filtered = filtered.filter(r => r.cuatrimestre === selectedQuarter.value);
+  }
+  
+  // Filtrar por período
+  if (selectedPeriod.value) {
+    filtered = filtered.filter(r => r.parcial === selectedPeriod.value);
+  }
+  
+  // Ordenar por fecha (más reciente primero)
+  filtered = [...filtered].sort((a, b) => {
+    return new Date(b.fecha) - new Date(a.fecha);
   });
+  
+  return filtered;
+});
+
+
+
+
+
+
+
+    
+  
 
   // Función para procesar cadenas concatenadas con STRING_AGG
   function procesarStringAgg(cadena) {
@@ -648,6 +704,26 @@ function generarPDFFormateado(informe) {
 .pagination-buttons {
   display: flex;
   gap: 10px;
+}
+
+
+/*nuevos filtros de filtro por periodo*/
+.admin-actions {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.period-selector {
+  display: flex;
+  flex-direction: column;
+}
+
+.error-message {
+  color: red;
+  font-size: 0.8em;
+  margin-top: 5px;
 }
 /* Nuevos estilos para la funcionalidad de finalizar cuatrimestre */
 .admin-controls {

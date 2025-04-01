@@ -19,6 +19,7 @@ import adminuser from './views/admin/adminuser.vue';
 import adminacti from './views/admin/adminacti.vue';
 import Inicioinforme from './views/inicioinforme.vue';
 import admininforme from './views/admin/admininforme.vue';
+import adminfile from './views/admin/adminfile.vue'
 
 const routes = [
     { 
@@ -173,6 +174,21 @@ const routes = [
               }
             }
           },
+
+          {
+            path: '/adminfile',
+            name: 'adminfile',
+            component: () => import('./views/admin/adminfile.vue'),
+            beforeEnter: (to, from, next) => {
+              if (isActiveSession() && isAdmin()) {
+                next();
+              } else {
+                next('/');
+              }
+            }
+          },
+          
+          
           
           
     // Ruta para página no encontrada

@@ -257,7 +257,7 @@ onMounted(obtenerUsuarios);
             </div>
 
             <div class="campo-formulario">
-              <label for="carrera">carrera:</label>
+              <label for="carrera">Carrera:</label>
               <input
                 id="carrera"
                 v-model="usuarioActual.carrera"
